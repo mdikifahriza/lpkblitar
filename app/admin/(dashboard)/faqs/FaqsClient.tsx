@@ -192,8 +192,6 @@ export function FaqsClient({
     <div className="space-y-8">
       <AdminPageHeader
         title="FAQ"
-        description="Kelola pertanyaan yang sering diajukan klien."
-        icon={CircleHelp}
         action={
           <div className="flex gap-2">
             <Button onClick={() => {

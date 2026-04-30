@@ -22,14 +22,13 @@ export function StorageClient({ storageData }: { storageData: StorageData }) {
     <div className="space-y-6">
       <AdminPageHeader
         title="Penyimpanan"
-        description="Pantau penggunaan kapasitas penyimpanan file dan media website."
-        icon={HardDrive}
-      >
-        <Button onClick={() => router.refresh()} variant="outline" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </AdminPageHeader>
+        action={
+          <Button onClick={() => router.refresh()} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      />
 
       <div className="grid gap-6">
         <div className="rounded-[28px] border border-border bg-card p-6 shadow-sm">

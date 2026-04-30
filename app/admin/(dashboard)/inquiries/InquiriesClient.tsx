@@ -230,12 +230,15 @@ export function InquiriesClient({ initialInquiries, services, userRole }: { init
 
   return (
       <div className="space-y-8">
-        <AdminPageHeader title="Pesan Konsultasi">
-          <Button onClick={handleDeleteAllConfirm} variant="destructive" className="gap-2">
-            <Trash2 className="h-4 w-4" />
-            Hapus Semua Pesan
-          </Button>
-        </AdminPageHeader>
+        <AdminPageHeader 
+          title="Pesan Konsultasi" 
+          action={
+            <Button onClick={handleDeleteAllConfirm} variant="destructive" className="gap-2">
+              <Trash2 className="h-4 w-4" />
+              Hapus Semua Pesan
+            </Button>
+          }
+        />
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">

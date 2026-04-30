@@ -233,11 +233,14 @@ export function AnalyticsClient({ analytics }: { analytics: AnalyticsOverview })
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Analytics">
-        <Button onClick={() => setIsResetDialogOpen(true)} variant="destructive" className="gap-2">
-          <Trash2 className="h-4 w-4" /> Reset Analitik
-        </Button>
-      </AdminPageHeader>
+      <AdminPageHeader 
+        title="Analytics" 
+        action={
+          <Button onClick={() => setIsResetDialogOpen(true)} variant="destructive" className="gap-2">
+            <Trash2 className="h-4 w-4" /> Reset Analitik
+          </Button>
+        }
+      />
 
       {!analytics.tableReady ? (
         <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100">

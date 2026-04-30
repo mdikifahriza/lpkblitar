@@ -29,7 +29,7 @@ export default async function ArtikelDetailPage({ params }: { params: { slug: st
         type: "p",
         text: paragraph.trim(),
       }))
-      .filter((block) => block.text.length > 0);
+      .filter((block: any) => block.text.length > 0);
   } else {
     article.content = [];
   }

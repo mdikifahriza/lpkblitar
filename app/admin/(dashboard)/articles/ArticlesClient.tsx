@@ -261,7 +261,6 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
     <div className="space-y-8">
       <AdminPageHeader
         title="Artikel & Insight"
-        description="Kelola artikel edukasi hukum dan insight terkini."
         action={
           <div className="flex gap-2">
             <Button onClick={() => {
