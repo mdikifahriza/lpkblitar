@@ -114,7 +114,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
               <div className="flex flex-col lg:flex-row">
                 <div className="w-full lg:w-3/5 relative overflow-hidden aspect-video lg:aspect-auto min-h-[300px]">
                   <div className="absolute top-4 left-4 z-10">
-                    <span className="px-3 py-1 bg-primary text-[#0d1117] text-xs font-bold uppercase tracking-wider rounded-sm shadow-md">
+                    <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-sm shadow-md">
                       Artikel Utama
                     </span>
                   </div>
@@ -123,7 +123,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
                     alt={featured.judul}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#0d1117] lg:from-transparent to-transparent opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-background lg:from-transparent to-transparent opacity-80" />
                 </div>
                 <div className="w-full lg:w-2/5 p-8 md:p-12 flex flex-col justify-center">
                   <div className="flex items-center gap-4 text-muted-foreground text-sm mb-6">
@@ -191,7 +191,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
                   onClick={() => handleFilterChange(filter)}
                   className={`px-5 py-2.5 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 ${
                     activeFilter === filter
-                      ? "bg-primary text-[#0d1117]"
+                      ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary"
                   }`}
                 >
@@ -227,7 +227,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
                       >
                         <div className="relative aspect-video overflow-hidden bg-background">
                           <div className="absolute top-4 left-4 z-10">
-                            <span className="px-3 py-1 bg-[#0a0d12]/80 backdrop-blur-md border border-border text-[10px] font-medium text-foreground uppercase tracking-wider rounded-sm">
+                            <span className="px-3 py-1 bg-background/80 backdrop-blur-md border border-border text-[10px] font-medium text-foreground uppercase tracking-wider rounded-sm">
                               {article.kategori.replace("-", " ")}
                             </span>
                           </div>
@@ -278,7 +278,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
                   <Button
                     onClick={() => setVisible((prev) => prev + PAGE_SIZE)}
                     variant="outline"
-                    className="border-primary text-primary hover:bg-primary hover:text-[#0d1117] px-8 py-6 h-auto tracking-wider text-sm font-medium uppercase transition-colors"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-6 h-auto tracking-wider text-sm font-medium uppercase transition-colors"
                   >
                     Muat Lebih Banyak
                   </Button>
@@ -291,6 +291,9 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
     </>
   );
 }
+
+
+
 
 
 

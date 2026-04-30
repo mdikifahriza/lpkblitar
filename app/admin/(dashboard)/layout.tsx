@@ -29,5 +29,17 @@ export default async function AdminLayout({
     redirect("/admin/login");
   }
 
-  return <AdminLayoutClient user={user}>{children}</AdminLayoutClient>;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, nama_lengkap, foto_url')
+    .eq('id', user.id)
+    .single();
+
+  const userRole = profile?.role || 'admin';
+
+  return (
+    <AdminLayoutClient user={user} userRole={userRole} userProfile={profile}>
+      {children}
+    </AdminLayoutClient>
+  );
 }

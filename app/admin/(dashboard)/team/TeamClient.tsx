@@ -1,11 +1,12 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
-import { Plus, Search, Edit, Trash2, CheckCircle2, XCircle, Loader2, User, Camera } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Edit, Loader2, Plus, Search, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 
+import { uploadFileToSupabase } from "@/app/admin/upload-action";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,34 +18,58 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { MobileCard, MobileCardList } from "@/components/ui/mobile-card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { SafeImage } from "@/components/ui/safe-image";
-import { upsertTeamMember, deleteTeamMember, toggleTeamStatus } from "./actions";
+import { deleteTeamMember, toggleTeamStatus, upsertTeamMember } from "./actions";
 
-export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
+type TeamMember = {
+  id: string;
+  nama: string;
+  jabatan: string;
+  spesialisasi?: string | null;
+  bio?: string | null;
+  foto_url?: string | null;
+  is_pimpinan: boolean;
+  nomor_urut: number;
+  aktif: boolean;
+};
+
+type TeamMemberForm = {
+  id: string | null;
+  nama: string;
+  jabatan: string;
+  spesialisasi: string;
+  bio: string;
+  foto_url: string;
+  is_pimpinan: boolean;
+  nomor_urut: number;
+  aktif: boolean;
+};
+
+export function TeamClient({ initialTeam }: { initialTeam: TeamMember[] }) {
   const router = useRouter();
+  const previewUrlRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  
-  const [formData, setFormData] = useState<any>({
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState<TeamMemberForm>({
     id: null,
     nama: "",
     jabatan: "",
@@ -53,15 +78,37 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
     foto_url: "",
     is_pimpinan: false,
     nomor_urut: 1,
-    aktif: true
+    aktif: true,
   });
-  
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filteredTeam = initialTeam.filter((m) => 
-    m.nama?.toLowerCase().includes(search.toLowerCase()) || 
-    m.jabatan?.toLowerCase().includes(search.toLowerCase())
+  const filteredTeam = initialTeam.filter(
+    (member) =>
+      member.nama?.toLowerCase().includes(search.toLowerCase()) ||
+      member.jabatan?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const revokePreviewUrl = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  };
+
+  const resetPhotoState = () => {
+    revokePreviewUrl();
+    setPhotoPreview(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      revokePreviewUrl();
+    };
+  }, []);
 
   const handleAdd = () => {
     setFormData({
@@ -73,13 +120,26 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
       foto_url: "",
       is_pimpinan: false,
       nomor_urut: initialTeam.length + 1,
-      aktif: true
+      aktif: true,
     });
+    resetPhotoState();
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (member: any) => {
-    setFormData({ ...member });
+  const handleEdit = (member: TeamMember) => {
+    setFormData({
+      id: member.id,
+      nama: member.nama,
+      jabatan: member.jabatan,
+      spesialisasi: member.spesialisasi || "",
+      bio: member.bio || "",
+      foto_url: member.foto_url || "",
+      is_pimpinan: member.is_pimpinan,
+      nomor_urut: member.nomor_urut,
+      aktif: member.aktif,
+    });
+    resetPhotoState();
+    setPhotoPreview(member.foto_url || null);
     setIsDialogOpen(true);
   };
 
@@ -88,8 +148,8 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
     setIsDeleteDialogOpen(true);
   };
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -97,43 +157,61 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
       return;
     }
 
-    setIsUploading(true);
-    toast.info("Mengunggah foto...");
-
-    try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `team/team-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from(process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "public-assets")
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage
-        .from(process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "public-assets")
-        .getPublicUrl(fileName);
-
-      setFormData({ ...formData, foto_url: publicUrlData.publicUrl });
-      toast.success("Foto berhasil diunggah");
-    } catch (error: any) {
-      toast.error(error.message || "Gagal mengunggah foto.");
-    } finally {
-      setIsUploading(false);
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 2MB");
+      return;
     }
-  }
+
+    revokePreviewUrl();
+    const objectUrl = URL.createObjectURL(file);
+    previewUrlRef.current = objectUrl;
+    setSelectedFile(file);
+    setPhotoPreview(objectUrl);
+  };
 
   const onSubmit = async () => {
     setIsLoading(true);
-    const { error } = await upsertTeamMember(formData);
-    if (error) {
-      toast.error(error);
-    } else {
-      toast.success(formData.id ? "Data anggota diperbarui" : "Anggota ditambahkan");
-      setIsDialogOpen(false);
-      router.refresh();
+
+      try {
+        let finalFotoUrl = formData.foto_url || "";
+
+        if (selectedFile) {
+          setIsUploading(true);
+          const fileExt = selectedFile.name.split(".").pop();
+          const fileName = `team/team-${crypto.randomUUID()}.${fileExt}`;
+          const uploadFormData = new FormData();
+          uploadFormData.append("file", selectedFile);
+          uploadFormData.append("path", fileName);
+
+        const uploadResult = await uploadFileToSupabase(uploadFormData);
+
+        if ("error" in uploadResult) {
+          throw new Error(uploadResult.error);
+        }
+
+        finalFotoUrl = uploadResult.url;
+      }
+
+      const { error } = await upsertTeamMember({
+        ...formData,
+        foto_url: finalFotoUrl,
+        previous_foto_url: formData.id ? formData.foto_url || "" : "",
+      });
+
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success(formData.id ? "Data anggota diperbarui" : "Anggota ditambahkan");
+        setIsDialogOpen(false);
+        resetPhotoState();
+        router.refresh();
+      }
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan anggota tim.");
+    } finally {
+      setIsUploading(false);
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const onConfirmDelete = async () => {
@@ -162,71 +240,74 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Manajemen Tim</h1>
-          <p className="text-muted-foreground">Kelola daftar pengacara dan staf ahli.</p>
-        </div>
-        <Button onClick={handleAdd} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-          <Plus className="w-4 h-4 mr-2" /> Tambah Anggota
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Manajemen Tim"
+        action={
+          <Button onClick={handleAdd} className="bg-primary font-bold text-primary-foreground hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
+          </Button>
+        }
+      />
 
-      <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
         <div className="mb-6">
           <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Cari nama atau jabatan..."
-              className="pl-9 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]"
+              className="bg-background pl-9 text-foreground focus-visible:ring-primary"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
         </div>
 
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="hidden overflow-hidden rounded-lg border border-border md:block">
           <Table>
             <TableHeader className="bg-background">
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="text-muted-foreground font-medium w-[80px]">Foto</TableHead>
-                <TableHead className="text-muted-foreground font-medium w-[25%]">Nama Lengkap</TableHead>
-                <TableHead className="text-muted-foreground font-medium w-[25%]">Jabatan / Spesialisasi</TableHead>
-                <TableHead className="text-muted-foreground font-medium w-[15%]">Status</TableHead>
-                <TableHead className="text-muted-foreground font-medium text-right">Aksi</TableHead>
+                <TableHead className="w-[80px] font-medium text-muted-foreground">Foto</TableHead>
+                <TableHead className="w-[25%] font-medium text-muted-foreground">Nama Lengkap</TableHead>
+                <TableHead className="w-[25%] font-medium text-muted-foreground">Jabatan / Spesialisasi</TableHead>
+                <TableHead className="w-[15%] font-medium text-muted-foreground">Status</TableHead>
+                <TableHead className="text-right font-medium text-muted-foreground">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTeam.length === 0 ? (
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                     Tidak ada data tim ditemukan
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredTeam.map((member) => (
-                  <TableRow key={member.id} className="border-border hover:bg-muted transition-colors">
+                  <TableRow key={member.id} className="border-border transition-colors hover:bg-muted">
                     <TableCell>
-                      <div className="w-10 h-10 rounded-full border border-border bg-background overflow-hidden flex items-center justify-center">
+                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
                         {member.foto_url ? (
-                          <SafeImage src={member.foto_url} alt={member.nama} className="w-full h-full object-cover" />
+                          <SafeImage src={member.foto_url} alt={member.nama} className="h-full w-full object-cover" />
                         ) : (
-                          <User className="w-5 h-5 text-muted-foreground" />
+                          <User className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-bold text-foreground mb-1 flex items-center gap-2">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-foreground">
                         {member.nama}
-                        {member.is_pimpinan && (
-                          <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] px-1.5 py-0">Pimpinan</Badge>
-                        )}
+                        {member.is_pimpinan ? (
+                          <Badge className="border-primary/30 bg-primary/20 px-1.5 py-0 text-[9px] text-primary">
+                            Pimpinan
+                          </Badge>
+                        ) : null}
                       </div>
                       <div className="text-xs text-muted-foreground">Urutan: {member.nomor_urut}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-foreground mb-1">{member.jabatan}</div>
-                      <div className="text-xs text-muted-foreground truncate max-w-[250px]">{member.spesialisasi}</div>
+                      <div className="mb-1 text-sm text-foreground">{member.jabatan}</div>
+                      <div className="max-w-[250px] truncate text-xs text-muted-foreground">
+                        {member.spesialisasi}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -235,18 +316,26 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
                           onCheckedChange={() => onToggleStatus(member.id, member.aktif)}
                           className="data-[state=checked]:bg-primary"
                         />
-                        <span className="text-sm text-muted-foreground">
-                          {member.aktif ? "Aktif" : "Draft"}
-                        </span>
+                        <span className="text-sm text-muted-foreground">{member.aktif ? "Aktif" : "Draft"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(member)} className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10">
-                          <Edit className="w-4 h-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(member)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteConfirm(member.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-400/10">
-                          <Trash2 className="w-4 h-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteConfirm(member.id)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:bg-red-400/10 hover:text-red-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -256,98 +345,247 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
             </TableBody>
           </Table>
         </div>
+
+        <MobileCardList>
+          {filteredTeam.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card py-10 text-center text-muted-foreground">
+              Tidak ada anggota tim ditemukan
+            </div>
+          ) : (
+            filteredTeam.map((member) => (
+              <MobileCard
+                key={member.id}
+                avatar={
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+                    {member.foto_url ? (
+                      <SafeImage src={member.foto_url} alt={member.nama} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                }
+                title={
+                  <div className="flex items-center gap-2">
+                    <span className="line-clamp-1 font-bold text-foreground">{member.nama}</span>
+                    {member.is_pimpinan ? (
+                      <Badge className="shrink-0 border-primary/30 bg-primary/20 px-1.5 py-0 text-[9px] text-primary">
+                        Pimpinan
+                      </Badge>
+                    ) : null}
+                  </div>
+                }
+                subtitle={<div className="truncate text-xs text-muted-foreground">{member.jabatan}</div>}
+                badges={
+                  <Badge
+                    variant="outline"
+                    className={`shrink-0 uppercase tracking-wider ${
+                      member.aktif
+                        ? "border-green-500/30 bg-green-500/10 text-[9px] text-green-500"
+                        : "border-border bg-muted text-[9px] text-muted-foreground"
+                    }`}
+                  >
+                    {member.aktif ? "Aktif" : "Draft"}
+                  </Badge>
+                }
+                viewTitle="Detail Tim Hukum"
+                viewContent={
+                  <div className="space-y-4">
+                    <div className="mb-6 flex items-center justify-center">
+                      <div className="flex h-40 w-32 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+                        {member.foto_url ? (
+                          <SafeImage src={member.foto_url} alt={member.nama} className="h-full w-full object-cover" />
+                        ) : (
+                          <User className="h-12 w-12 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 border-b border-border py-2">
+                      <span className="text-sm text-muted-foreground">Nama Lengkap</span>
+                      <span className="col-span-2 flex items-center gap-2 font-bold text-foreground">
+                        {member.nama}
+                        {member.is_pimpinan ? (
+                          <Badge className="shrink-0 border-primary/30 bg-primary/20 px-1.5 py-0 text-[9px] text-primary">
+                            Pimpinan
+                          </Badge>
+                        ) : null}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 border-b border-border py-2">
+                      <span className="text-sm text-muted-foreground">Jabatan</span>
+                      <span className="col-span-2 font-medium text-foreground">{member.jabatan}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 border-b border-border py-2">
+                      <span className="text-sm text-muted-foreground">No. Urut</span>
+                      <span className="col-span-2 font-medium text-foreground">{member.nomor_urut}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 border-b border-border py-2">
+                      <span className="text-sm text-muted-foreground">Status Publikasi</span>
+                      <span className="col-span-2">{member.aktif ? "Aktif (Tampil di Web)" : "Draft (Tersimpan)"}</span>
+                    </div>
+                    <div className="pt-4">
+                      <span className="mb-2 block text-sm text-muted-foreground">Spesialisasi:</span>
+                      <div className="rounded-lg border border-border bg-background p-4 text-sm leading-relaxed text-foreground">
+                        {member.spesialisasi || <span className="italic text-muted-foreground">Kosong</span>}
+                      </div>
+                    </div>
+                    <div className="pt-4">
+                      <span className="mb-2 block text-sm text-muted-foreground">Bio Singkat:</span>
+                      <div className="max-h-[300px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-4 text-sm leading-relaxed text-foreground">
+                        {member.bio || <span className="italic text-muted-foreground">Kosong</span>}
+                      </div>
+                    </div>
+                  </div>
+                }
+                actions={
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(member)}
+                      className="border-border bg-background text-muted-foreground hover:text-primary"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteConfirm(member.id)}
+                      className="border-border bg-background text-muted-foreground hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Hapus
+                    </Button>
+                  </>
+                }
+              />
+            ))
+          )}
+        </MobileCardList>
       </div>
 
-      {/* Dialog Form */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            resetPhotoState();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-border bg-card text-foreground">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl text-primary">
               {formData.id ? "Edit Anggota Tim" : "Tambah Anggota Baru"}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            
-            <div className="flex items-center gap-6 pb-6 border-b border-border">
-              <div className="relative group shrink-0">
-                <div className="w-24 h-24 rounded-full border border-border bg-background overflow-hidden flex items-center justify-center">
-                  {formData.foto_url ? (
-                    <SafeImage src={formData.foto_url} alt="Preview" className="w-full h-full object-cover" />
+            <div className="flex items-center gap-6 border-b border-border pb-6">
+              <div className="relative shrink-0 group">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+                  {photoPreview ? (
+                    <SafeImage src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
                   ) : (
-                    <User className="w-10 h-10 text-muted-foreground" />
+                    <User className="h-10 w-10 text-muted-foreground" />
                   )}
                 </div>
-                <label 
-                  htmlFor="photo-upload" 
-                  className={`absolute inset-0 flex items-center justify-center bg-black/60 rounded-full cursor-pointer transition-opacity ${isUploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                <label
+                  htmlFor="photo-upload"
+                  className={`absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/60 transition-opacity ${
+                    isUploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  }`}
                 >
                   {isUploading ? (
-                    <Loader2 className="w-6 h-6 text-foreground animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin text-foreground" />
                   ) : (
-                    <Camera className="w-6 h-6 text-foreground" />
+                    <Camera className="h-6 w-6 text-foreground" />
                   )}
                 </label>
-                <input 
-                  id="photo-upload" 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handlePhotoUpload}
-                  disabled={isUploading}
+                <input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handlePhotoSelect}
+                  disabled={isUploading || isLoading}
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                Klik ikon kamera untuk mengunggah foto. Rekomendasi ukuran: 400x500px portrait.
+                Klik ikon kamera untuk memilih foto. Foto baru akan diunggah saat Anda menyimpan perubahan.
               </div>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Nama Lengkap</Label>
-              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
-                value={formData.nama} onChange={(e) => setFormData({...formData, nama: e.target.value})} />
+              <Input
+                className="col-span-3 bg-background text-foreground focus-visible:ring-primary"
+                value={formData.nama}
+                onChange={(event) => setFormData({ ...formData, nama: event.target.value })}
+              />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Jabatan</Label>
-              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Input
+                className="col-span-3 bg-background text-foreground focus-visible:ring-primary"
                 placeholder="Contoh: Lawyer Litigasi"
-                value={formData.jabatan} onChange={(e) => setFormData({...formData, jabatan: e.target.value})} />
+                value={formData.jabatan}
+                onChange={(event) => setFormData({ ...formData, jabatan: event.target.value })}
+              />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Spesialisasi</Label>
-              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Input
+                className="col-span-3 bg-background text-foreground focus-visible:ring-primary"
                 placeholder="Contoh: Gugatan PMH, Wanprestasi"
-                value={formData.spesialisasi} onChange={(e) => setFormData({...formData, spesialisasi: e.target.value})} />
+                value={formData.spesialisasi}
+                onChange={(event) => setFormData({ ...formData, spesialisasi: event.target.value })}
+              />
             </div>
+
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right text-muted-foreground mt-3">Bio Singkat</Label>
-              <Textarea className="col-span-3 bg-background border-border text-foreground min-h-[100px] focus-visible:ring-[#c9a84c]" 
-                value={formData.bio} onChange={(e) => setFormData({...formData, bio: e.target.value})} />
+              <Label className="mt-3 text-right text-muted-foreground">Bio Singkat</Label>
+              <Textarea
+                className="col-span-3 min-h-[100px] bg-background text-foreground focus-visible:ring-primary"
+                value={formData.bio}
+                onChange={(event) => setFormData({ ...formData, bio: event.target.value })}
+              />
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Tandai Pimpinan</Label>
               <div className="col-span-3 flex items-center space-x-2">
                 <Switch
                   checked={formData.is_pimpinan}
-                  onCheckedChange={(val) => setFormData({...formData, is_pimpinan: val})}
+                  onCheckedChange={(value) => setFormData({ ...formData, is_pimpinan: value })}
                   className="data-[state=checked]:bg-primary"
                 />
-                <span className="text-muted-foreground text-sm">Jika Ya, akan ditampilkan lebih besar di atas grid tim.</span>
+                <span className="text-sm text-muted-foreground">
+                  Jika Ya, akan ditampilkan lebih besar di atas grid tim.
+                </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid grid-cols-3 items-center gap-4 col-span-2 md:col-span-1">
+              <div className="col-span-2 grid grid-cols-3 items-center gap-4 md:col-span-1">
                 <Label className="text-right text-muted-foreground">Nomor Urut</Label>
-                <Input type="number" className="col-span-2 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
-                  value={formData.nomor_urut} onChange={(e) => setFormData({...formData, nomor_urut: parseInt(e.target.value) || 0})} />
+                <Input
+                  type="number"
+                  className="col-span-2 bg-background text-foreground focus-visible:ring-primary"
+                  value={formData.nomor_urut}
+                  onChange={(event) =>
+                    setFormData({ ...formData, nomor_urut: parseInt(event.target.value, 10) || 0 })
+                  }
+                />
               </div>
-              <div className="grid grid-cols-3 items-center gap-4 col-span-2 md:col-span-1">
+              <div className="col-span-2 grid grid-cols-3 items-center gap-4 md:col-span-1">
                 <Label className="text-right text-muted-foreground">Status Publikasi</Label>
                 <div className="col-span-2 flex items-center space-x-2">
                   <Switch
                     checked={formData.aktif}
-                    onCheckedChange={(val) => setFormData({...formData, aktif: val})}
+                    onCheckedChange={(value) => setFormData({ ...formData, aktif: value })}
                     className="data-[state=checked]:bg-primary"
                   />
                 </div>
@@ -356,30 +594,41 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">Batal</Button>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                Batal
+              </Button>
             </DialogClose>
-            <Button onClick={onSubmit} disabled={isLoading || isUploading} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Simpan
+            <Button
+              onClick={onSubmit}
+              disabled={isLoading || isUploading}
+              className="bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Simpan
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
+        <DialogContent className="border-border bg-card text-foreground sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl text-red-400">Hapus Anggota</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-muted-foreground">Apakah Anda yakin ingin menghapus data anggota ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <p className="text-muted-foreground">
+              Apakah Anda yakin ingin menghapus data anggota ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">Batal</Button>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                Batal
+              </Button>
             </DialogClose>
-            <Button onClick={onConfirmDelete} disabled={isLoading} className="bg-red-500 hover:bg-red-600 text-white font-bold">
-              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Hapus
+            <Button onClick={onConfirmDelete} disabled={isLoading} className="bg-red-500 font-bold text-white hover:bg-red-600">
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Hapus
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -387,5 +636,3 @@ export function TeamClient({ initialTeam }: { initialTeam: any[] }) {
     </div>
   );
 }
-
-

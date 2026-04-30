@@ -1,9 +1,18 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/contact";
 
-export function FloatingWhatsApp() {
+export function FloatingWhatsApp({
+  phoneNumber,
+  message,
+}: {
+  phoneNumber?: string | null;
+  message?: string | null;
+}) {
   const [isVisible, setIsVisible] = useState(false);
+  const whatsappUrl = buildWhatsAppUrl(phoneNumber, message);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,7 +25,7 @@ export function FloatingWhatsApp() {
 
   return (
     <a
-      href="https://wa.me/6281234567890"
+      href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={`fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 hover:bg-[#20bd5a] flex items-center justify-center ${

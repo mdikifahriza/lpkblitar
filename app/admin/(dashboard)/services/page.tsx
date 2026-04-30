@@ -16,19 +16,28 @@ export default async function AdminServicesPage() {
     }
   );
 
-  const { data: services, error } = await supabase
-    .from("services")
-    .select("*")
-    .order("nomor_urut", { ascending: true });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  let data = services || [];
-  
-  if (error && error.code === 'PGRST205') {
-     data = [
-       { id: "1", nama: "Dummy Service 1", slug: "dummy-1", kategori: "litigasi", aktif: true, nomor_urut: 1 },
-       { id: "2", nama: "Dummy Service 2", slug: "dummy-2", kategori: "non-litigasi", aktif: false, nomor_urut: 2 }
-     ];
+  const [{ data: services, error }, { data: profile }] = await Promise.all([
+    supabase
+      .from('services')
+      .select('*')
+      .order('nomor_urut', { ascending: true }),
+    user ? supabase.from('profiles').select('role').eq('id', user.id).single() : Promise.resolve({ data: null })
+  ]);
+
+  if (error) {
+    if (error.code === '42P01') {
+      return (
+        <div className="p-8 text-center text-muted-foreground">
+          <p>Tabel services belum dibuat. Jalankan migration database terlebih dahulu.</p>
+        </div>
+      );
+    }
+    console.error("Error fetching services:", error.message);
   }
 
-  return <ServicesClient initialServices={data} />;
+  const userRole = profile?.role || 'admin';
+
+  return <ServicesClient initialServices={services || []} userRole={userRole} />;
 }

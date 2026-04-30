@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { MobileCard, MobileCardList } from "@/components/ui/mobile-card";
 import {
   Dialog,
   DialogContent,
@@ -29,14 +30,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { upsertService, deleteService, toggleServiceStatus } from "./actions";
+import { upsertService, deleteService, toggleServiceStatus, deleteAllServices } from "./actions";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
-export function ServicesClient({ initialServices }: { initialServices: any[] }) {
+export function ServicesClient({ initialServices, userRole }: { initialServices: any[], userRole: string }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   
   const [formData, setFormData] = useState<any>({
     id: null,
@@ -93,6 +96,19 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
     setIsLoading(false);
   };
 
+  const onConfirmDeleteAll = async () => {
+    setIsLoading(true);
+    const { error } = await deleteAllServices();
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success("Semua layanan dihapus");
+      setIsDeleteAllDialogOpen(false);
+      router.refresh();
+    }
+    setIsLoading(false);
+  };
+
   const onConfirmDelete = async () => {
     if (!deleteId) return;
     setIsLoading(true);
@@ -119,15 +135,25 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Layanan Hukum</h1>
-          <p className="text-muted-foreground">Kelola daftar layanan dan keahlian firma hukum.</p>
-        </div>
-        <Button onClick={handleAdd} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-          <Plus className="w-4 h-4 mr-2" /> Tambah Layanan
-        </Button>
-      </div>
+        <AdminPageHeader
+          title="Layanan Hukum"
+          action={
+            <div className="flex gap-2">
+              <Button onClick={() => {
+                if (userRole !== 'superadmin') {
+                  toast.error("Akses ditolak: Hanya superadmin yang dapat menghapus semua layanan.");
+                  return;
+                }
+                setIsDeleteAllDialogOpen(true);
+              }} variant="destructive" className="font-bold" disabled={initialServices.length === 0}>
+                <Trash2 className="w-4 h-4 mr-2" /> Hapus Semua
+              </Button>
+              <Button onClick={handleAdd} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+                <Plus className="w-4 h-4 mr-2" /> Tambah Layanan
+              </Button>
+            </div>
+          }
+        />
 
       <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
         <div className="mb-6">
@@ -135,14 +161,14 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Cari layanan..."
-              className="pl-9 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]"
+              className="pl-9 bg-background border-border text-foreground focus-visible:ring-primary"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="hidden md:block rounded-lg border border-border overflow-hidden">
           <Table>
             <TableHeader className="bg-background">
               <TableRow className="border-border hover:bg-transparent">
@@ -201,6 +227,94 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
             </TableBody>
           </Table>
         </div>
+
+        {/* Mobile View */}
+        <MobileCardList>
+          {filteredServices.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground border border-border rounded-xl bg-card">
+              Tidak ada layanan ditemukan
+            </div>
+          ) : (
+            filteredServices.map((srv) => (
+              <MobileCard
+                key={srv.id}
+                avatar={
+                  <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center font-serif font-bold text-muted-foreground">
+                    {String(srv.nomor_urut).padStart(2, "0")}
+                  </div>
+                }
+                title={<div className="font-bold text-foreground line-clamp-1">{srv.nama}</div>}
+                subtitle={<div className="text-xs text-muted-foreground font-mono truncate">/{srv.slug}</div>}
+                badges={
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10 uppercase text-[9px] tracking-wider shrink-0">
+                      {srv.kategori.replace("-", " ")}
+                    </Badge>
+                    <Badge variant="outline" className={`uppercase text-[9px] tracking-wider shrink-0 ${srv.aktif ? "text-green-500 border-green-500/30 bg-green-500/10" : "text-muted-foreground border-border bg-muted"}`}>
+                      {srv.aktif ? "Aktif" : "Draft"}
+                    </Badge>
+                  </div>
+                }
+                viewTitle="Detail Layanan"
+                viewContent={
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2 py-2 border-b border-border">
+                      <span className="text-muted-foreground text-sm">Nama</span>
+                      <span className="col-span-2 text-foreground font-bold">{srv.nama}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 py-2 border-b border-border">
+                      <span className="text-muted-foreground text-sm">Slug URL</span>
+                      <span className="col-span-2 text-foreground font-mono text-sm break-all">/{srv.slug}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 py-2 border-b border-border">
+                      <span className="text-muted-foreground text-sm">Kategori</span>
+                      <span className="col-span-2">
+                        <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10 uppercase text-[10px] tracking-wider">
+                          {srv.kategori.replace("-", " ")}
+                        </Badge>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 py-2 border-b border-border">
+                      <span className="text-muted-foreground text-sm">Status</span>
+                      <span className="col-span-2">
+                        {srv.aktif ? "Aktif (Tampil di Web)" : "Draft (Tersimpan)"}
+                      </span>
+                    </div>
+                    <div className="pt-4">
+                      <span className="text-muted-foreground text-sm block mb-2">Deskripsi Singkat (Landing Page):</span>
+                      <div className="text-foreground text-sm leading-relaxed bg-background p-4 rounded-lg border border-border">
+                        {srv.deskripsi_singkat || <span className="italic text-muted-foreground">Kosong</span>}
+                      </div>
+                    </div>
+                    <div className="pt-4">
+                      <span className="text-muted-foreground text-sm block mb-2">Deskripsi Lengkap (Halaman Detail):</span>
+                      <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed bg-background p-4 rounded-lg border border-border max-h-[300px] overflow-y-auto">
+                        {srv.deskripsi_lengkap || <span className="italic text-muted-foreground">Kosong</span>}
+                      </div>
+                    </div>
+                  </div>
+                }
+                actions={
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(srv)} className="text-muted-foreground hover:text-primary border-border bg-background">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleDeleteConfirm(srv.id)} 
+                      className="text-muted-foreground hover:text-red-500 hover:border-red-500 hover:bg-red-500/10 border-border bg-background"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Hapus
+                    </Button>
+                  </>
+                }
+              />
+            ))
+          )}
+        </MobileCardList>
       </div>
 
       {/* Dialog Form */}
@@ -214,12 +328,12 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
           <div className="grid gap-6 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Nama Layanan</Label>
-              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-primary" 
                 value={formData.nama} onChange={(e) => setFormData({...formData, nama: e.target.value})} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Slug URL</Label>
-              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Input className="col-span-3 bg-background border-border text-foreground focus-visible:ring-primary" 
                 placeholder="Kosongkan untuk otomatis dari nama"
                 value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} />
             </div>
@@ -227,7 +341,7 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
               <Label className="text-right text-muted-foreground">Kategori</Label>
               <div className="col-span-3">
                 <Select value={formData.kategori} onValueChange={(val) => setFormData({...formData, kategori: val})}>
-                  <SelectTrigger className="bg-background border-border text-foreground focus:ring-[#c9a84c]">
+                  <SelectTrigger className="bg-background border-border text-foreground focus:ring-primary">
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
                   <SelectContent className="bg-secondary border-border text-foreground">
@@ -241,17 +355,17 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right text-muted-foreground mt-3">Deskripsi Singkat</Label>
-              <Textarea className="col-span-3 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Textarea className="col-span-3 bg-background border-border text-foreground focus-visible:ring-primary" 
                 value={formData.deskripsi_singkat} onChange={(e) => setFormData({...formData, deskripsi_singkat: e.target.value})} />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right text-muted-foreground mt-3">Deskripsi Lengkap</Label>
-              <Textarea className="col-span-3 bg-background border-border text-foreground min-h-[150px] focus-visible:ring-[#c9a84c]" 
+              <Textarea className="col-span-3 bg-background border-border text-foreground min-h-[150px] focus-visible:ring-primary" 
                 value={formData.deskripsi_lengkap} onChange={(e) => setFormData({...formData, deskripsi_lengkap: e.target.value})} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-muted-foreground">Nomor Urut</Label>
-              <Input type="number" className="col-span-1 bg-background border-border text-foreground focus-visible:ring-[#c9a84c]" 
+              <Input type="number" className="col-span-1 bg-background border-border text-foreground focus-visible:ring-primary" 
                 value={formData.nomor_urut} onChange={(e) => setFormData({...formData, nomor_urut: parseInt(e.target.value) || 0})} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -296,7 +410,30 @@ export function ServicesClient({ initialServices }: { initialServices: any[] }) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-red-400">Hapus Semua Layanan</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">Apakah Anda yakin ingin menghapus <b>semua</b> layanan secara permanen? Tindakan ini tidak dapat dibatalkan.</p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">Batal</Button>
+            </DialogClose>
+            <Button onClick={onConfirmDeleteAll} disabled={isLoading} className="bg-red-500 hover:bg-red-600 text-white font-bold">
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Hapus Semua
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+
+
+
+
 

@@ -22,13 +22,12 @@ import {
   type Article,
   type ArticleBlock,
 } from "@/lib/data";
+import { buildWhatsAppUrl } from "@/lib/contact";
 import NotFound from "@/app/not-found";
 
-const WHATSAPP_NUMBER = "6281234567890";
-
-function buildWhatsAppHref(article: any) {
+function buildWhatsAppHref(article: any, whatsappNumber?: string | null) {
   const message = `Halo, saya sudah membaca artikel "${article.judul}" dan ingin berkonsultasi lebih lanjut.`;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return buildWhatsAppUrl(whatsappNumber, message);
 }
 
 // Function to render different block types
@@ -83,7 +82,17 @@ function renderBlock(block: any, idx: number) {
 }
 
 
-export function ArtikelDetailClient({ article, author, relatedArticles }: { article: any, author: any, relatedArticles: any[] }) {
+export function ArtikelDetailClient({
+  article,
+  author,
+  relatedArticles,
+  whatsappNumber,
+}: {
+  article: any,
+  author: any,
+  relatedArticles: any[],
+  whatsappNumber?: string | null,
+}) {
   
   const [isCopied, setIsCopied] = useState(false);
 
@@ -270,7 +279,7 @@ export function ArtikelDetailClient({ article, author, relatedArticles }: { arti
                     didampingi ahlinya.
                   </p>
                   <a
-                    href={buildWhatsAppHref(article)}
+                    href={buildWhatsAppHref(article, whatsappNumber)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg text-sm font-medium transition-colors"
@@ -371,18 +380,6 @@ export function ArtikelDetailClient({ article, author, relatedArticles }: { arti
       </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

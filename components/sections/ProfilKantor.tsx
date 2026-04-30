@@ -5,3 +5,5 @@ export async function ProfilKantor() {
   const settings = await getSiteSettings();
   return <ProfilKantorClient settings={settings} />;
 }
+
+

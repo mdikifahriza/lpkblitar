@@ -1,18 +1,23 @@
-﻿"use client";
-import { SafeImage } from "@/components/ui/safe-image";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+"use client";
+
 import Link from "next/link";
-import { MessageCircle, ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import type { ContactSettingsRecord } from "@/lib/api/contact";
+import { buildWhatsAppUrl } from "@/lib/contact";
+import { Button } from "@/components/ui/button";
+import { SafeImage } from "@/components/ui/safe-image";
 
 interface HeroClientProps {
   settings: Record<string, string>;
+  contact: ContactSettingsRecord;
 }
 
-export function HeroClient({ settings }: HeroClientProps) {
-  const whatsappNumber = settings.whatsapp_number || "6281234567890";
-  const defaultMessage = settings.whatsapp_message_default || "Halo Pak Hari, saya ingin konsultasi mengenai masalah hukum saya.";
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(defaultMessage)}`;
+export function HeroClient({ settings, contact }: HeroClientProps) {
+  const whatsappUrl = buildWhatsAppUrl(
+    contact.whatsapp_number,
+    contact.whatsapp_message_default
+  );
 
   return (
     <section className="relative min-h-screen flex items-center pt-24 pb-12 overflow-hidden noise-bg">
@@ -33,14 +38,15 @@ export function HeroClient({ settings }: HeroClientProps) {
             </h1>
 
             <p className="text-muted-foreground text-lg md:text-xl leading-relaxed mb-12 max-w-xl">
-              {settings.hero_subheading || "Kantor konsultan hukum dan perlindungan konsumen di Blitar yang berfokus pada penyelesaian sengketa finance, perbankan, dan pengembangan usaha secara efektif."}
+              {settings.hero_subheading ||
+                "Kantor konsultan hukum dan perlindungan konsumen di Blitar yang berfokus pada penyelesaian sengketa finance, perbankan, dan pengembangan usaha secara efektif."}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <a href={whatsappUrl} target="_blank" rel="noreferrer" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base uppercase tracking-wider font-bold gap-3 rounded-sm transition-all shadow-[0_0_20px_rgba(201,168,76,0.3)] hover:shadow-[0_0_30px_rgba(201,168,76,0.5)]"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base uppercase tracking-wider font-bold gap-3 rounded-sm transition-all shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)]"
                 >
                   <MessageCircle className="w-5 h-5" />
                   {settings.hero_cta_primary || "Konsultasi via WhatsApp"}
@@ -64,10 +70,10 @@ export function HeroClient({ settings }: HeroClientProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="relative hidden lg:block"
+            className="relative lg:block mt-8 lg:mt-0"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent blur-[100px] -z-10" />
-            <div className="relative aspect-[3/4] max-w-md ml-auto mr-12 rounded-2xl overflow-hidden border border-border shadow-2xl">
+            <div className="relative aspect-[3/4] max-w-sm md:max-w-md mx-auto lg:ml-auto lg:mr-12 rounded-2xl overflow-hidden border border-border shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 opacity-80" />
               <SafeImage
                 src={settings.hero_image_url || "/images/hero-portrait.png"}
@@ -75,12 +81,11 @@ export function HeroClient({ settings }: HeroClientProps) {
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            
-            {/* Floating decorative element */}
-            <motion.div 
+
+            <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="absolute bottom-10 left-10 bg-card/80 backdrop-blur-md border border-primary/30 p-6 rounded-xl shadow-xl z-20"
+              className="absolute bottom-10 left-4 lg:left-10 bg-card/80 backdrop-blur-md border border-primary/30 p-4 lg:p-6 rounded-xl shadow-xl z-20"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -98,4 +103,3 @@ export function HeroClient({ settings }: HeroClientProps) {
     </section>
   );
 }
-

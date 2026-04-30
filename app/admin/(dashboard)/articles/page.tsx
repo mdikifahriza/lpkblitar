@@ -16,19 +16,28 @@ export default async function AdminArticlesPage() {
     }
   );
 
-  // Use Anon Key (bypasses RLS due to authenticated session)
-  const { data: articles, error } = await supabase
-    .from("articles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  let data = articles || [];
-  
-  if (error && error.code === 'PGRST205') {
-     data = [
-       { id: "1", judul: "Dummy Article", slug: "dummy", kategori: "panduan-hukum", published: true, created_at: new Date().toISOString() }
-     ];
+  const [{ data: articles, error }, { data: profile }] = await Promise.all([
+    supabase
+      .from("articles")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    user ? supabase.from('profiles').select('role').eq('id', user.id).single() : Promise.resolve({ data: null })
+  ]);
+
+  if (error) {
+    if (error.code === '42P01') {
+      return (
+        <div className="p-8 text-center text-muted-foreground">
+          <p>Tabel articles belum dibuat. Jalankan migration database terlebih dahulu.</p>
+        </div>
+      );
+    }
+    console.error("Error fetching articles:", error.message);
   }
 
-  return <ArticlesClient initialArticles={data} />;
+  const userRole = profile?.role || 'admin';
+
+  return <ArticlesClient initialArticles={articles || []} userRole={userRole} />;
 }

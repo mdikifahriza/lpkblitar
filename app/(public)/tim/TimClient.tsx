@@ -155,7 +155,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                 <div className="relative group">
                   <div className="absolute inset-0 bg-primary translate-x-4 translate-y-4 rounded-xl opacity-20 transition-transform duration-500 group-hover:translate-x-2 group-hover:translate-y-2" />
                   <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-border">
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-transparent opacity-80 z-10 mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80 z-10 mix-blend-multiply" />
                     <SafeImage
                       src={principal.foto_url}
                       alt={principal.nama}
@@ -224,7 +224,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                 onClick={() => setActiveFilter(filter as string)}
                 className={`px-6 py-2.5 rounded-full text-sm font-medium uppercase tracking-wider transition-all duration-300 ${
                   activeFilter === filter
-                    ? "bg-primary text-[#0d1117]"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary"
                 }`}
               >
@@ -338,6 +338,9 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
     </>
   );
 }
+
+
+
 
 
 

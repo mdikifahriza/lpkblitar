@@ -37,14 +37,32 @@ export default async function proxy(request: NextRequest) {
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   const isLoginRoute = request.nextUrl.pathname === '/admin/login';
 
+  // Route restrictions for unauthenticated users
   if (isAdminRoute && !isLoginRoute && !user) {
-    // If not logged in and trying to access admin (except login), redirect to login
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
+  // Route restrictions for authenticated users
   if (isLoginRoute && user) {
-    // If already logged in and trying to access login page, redirect to dashboard
     return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // Superadmin Only Routes Protection
+  if (
+    user && 
+    (request.nextUrl.pathname.startsWith('/admin/settings') || 
+     request.nextUrl.pathname.startsWith('/admin/users'))
+  ) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    // If user is not superadmin or profile doesn't exist, redirect to dashboard
+    if (!profile || profile.role !== 'superadmin') {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
   return supabaseResponse;

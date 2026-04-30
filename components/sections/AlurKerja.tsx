@@ -5,3 +5,5 @@ export async function AlurKerja() {
   const settings = await getSiteSettings();
   return <AlurKerjaClient settings={settings} />;
 }
+
+

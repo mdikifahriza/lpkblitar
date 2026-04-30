@@ -35,6 +35,17 @@ export async function deleteService(id: string) {
   }
 }
 
+export async function deleteAllServices() {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from('services').delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Gagal menghapus semua layanan." };
+  }
+}
+
 export async function toggleServiceStatus(id: string, aktif: boolean) {
   try {
     const supabase = await createClient();

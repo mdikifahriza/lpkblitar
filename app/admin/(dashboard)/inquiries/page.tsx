@@ -1,6 +1,7 @@
 ﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { InquiriesClient } from "./InquiriesClient";
+import { getServices } from "@/lib/api/services";
 
 export default async function AdminInquiriesPage() {
   const cookieStore = await cookies();
@@ -16,19 +17,36 @@ export default async function AdminInquiriesPage() {
     }
   );
 
-  const { data: inquiries, error } = await supabase
-    .from("inquiries")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // Handle if inquiries table does not exist
-  let data = inquiries || [];
-  if (error && error.code === 'PGRST205') {
-    data = [
-      { id: "1", nama: "Dummy Client 1", no_hp: "0812345678", email: "dummy1@test.com", pesan: "Test message 1", status: "baru", created_at: new Date().toISOString() },
-      { id: "2", nama: "Dummy Client 2", no_hp: "0812345679", email: "dummy2@test.com", pesan: "Test message 2", status: "diproses", created_at: new Date().toISOString() }
-    ];
+  const [{ data: inquiries, error }, services, { data: profile }] = await Promise.all([
+    supabase
+      .from("inquiries")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    getServices(),
+    user ? supabase.from('profiles').select('role').eq('id', user.id).single() : Promise.resolve({ data: null })
+  ]);
+
+  if (error) {
+    console.error("Error fetching inquiries:", error.message);
   }
 
-  return <InquiriesClient initialInquiries={data} />;
+  const data = (inquiries as any[]) || [];
+  
+  if (data.length === 0) {
+    const { error: countError } = await supabase.from("inquiries").select('*', { count: 'exact', head: true });
+    
+    if (countError && countError.code === '42P01') {
+      return (
+        <div className="p-8 text-center text-muted-foreground">
+          <p>Tabel inquiries belum dibuat. Jalankan migration database terlebih dahulu.</p>
+        </div>
+      );
+    }
+  }
+
+  const userRole = profile?.role || 'admin';
+
+  return <InquiriesClient initialInquiries={data} services={services} userRole={userRole} />;
 }

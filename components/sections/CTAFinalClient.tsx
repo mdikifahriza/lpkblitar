@@ -1,21 +1,25 @@
-﻿"use client";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, FileText } from "lucide-react";
+"use client";
+
 import Link from "next/link";
+import { FileText, MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import type { ContactSettingsRecord } from "@/lib/api/contact";
+import { buildWhatsAppUrl } from "@/lib/contact";
+import { Button } from "@/components/ui/button";
 
 interface CTAFinalClientProps {
   settings: Record<string, string>;
+  contact: ContactSettingsRecord;
 }
 
-export function CTAFinalClient({ settings }: CTAFinalClientProps) {
-  const whatsappNumber = settings.whatsapp_number || "6281234567890";
-  const defaultMessage = settings.whatsapp_message_default || "Halo Pak Hari, saya ingin konsultasi mengenai masalah hukum saya.";
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(defaultMessage)}`;
+export function CTAFinalClient({ settings, contact }: CTAFinalClientProps) {
+  const whatsappUrl = buildWhatsAppUrl(
+    contact.whatsapp_number,
+    contact.whatsapp_message_default
+  );
 
   return (
-    <section className="relative py-24 bg-primary overflow-hidden">
-      {/* Background Pattern */}
+    <section className="relative py-24 bg-secondary text-secondary-foreground overflow-hidden">
       <div
         className="absolute inset-0 opacity-10 pointer-events-none mix-blend-multiply"
         style={{
@@ -26,11 +30,12 @@ export function CTAFinalClient({ settings }: CTAFinalClientProps) {
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="font-serif text-4xl md:text-5xl lg:text-6xl text-primary-foreground font-bold leading-tight mb-6"
+            className="font-serif text-4xl md:text-5xl lg:text-6xl text-secondary-foreground font-bold leading-tight mb-6"
           >
             Siap Menyelesaikan <br className="hidden md:block" />
             Masalah Hukum Anda?
@@ -41,10 +46,10 @@ export function CTAFinalClient({ settings }: CTAFinalClientProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-primary-foreground/80 text-lg md:text-xl mb-12 max-w-2xl mx-auto"
+            className="text-secondary-foreground/80 text-lg md:text-xl mb-12 max-w-2xl mx-auto"
           >
-            Jangan tunda hingga masalah semakin rumit. Dapatkan analisa tajam dan
-            strategi penyelesaian efektif dari tim profesional kami.
+            Jangan tunda hingga masalah semakin rumit. Dapatkan analisa tajam dan strategi penyelesaian efektif dari
+            tim profesional kami.
           </motion.p>
 
           <motion.div
@@ -57,7 +62,7 @@ export function CTAFinalClient({ settings }: CTAFinalClientProps) {
             <a href={whatsappUrl} target="_blank" rel="noreferrer" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-foreground text-primary-foreground hover:bg-foreground/90 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none"
+                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none"
               >
                 <MessageCircle className="w-5 h-5" />
                 {settings.hero_cta_primary || "Hubungi via WhatsApp"}
@@ -68,7 +73,7 @@ export function CTAFinalClient({ settings }: CTAFinalClientProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto border-primary-foreground text-primary-foreground hover:bg-foreground/10 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none bg-transparent"
+                className="w-full sm:w-auto border-primary/35 text-secondary-foreground hover:bg-primary/10 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none bg-transparent"
               >
                 <FileText className="w-5 h-5" />
                 Isi Form Konsultasi
@@ -80,7 +85,3 @@ export function CTAFinalClient({ settings }: CTAFinalClientProps) {
     </section>
   );
 }
-
-
-
-

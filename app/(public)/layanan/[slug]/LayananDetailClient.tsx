@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 
 import Link from "next/link";
@@ -19,17 +19,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { SERVICES, type Service } from "@/lib/data";
+import { buildWhatsAppUrl } from "@/lib/contact";
+import type { ServiceRow } from "@/lib/api/services";
 import NotFound from "@/app/not-found";
 
-const WHATSAPP_NUMBER = "6281234567890";
-
-function buildWhatsAppHref(service: any) {
+function buildWhatsAppHref(service: ServiceRow, whatsappNumber?: string | null) {
   const message = `Halo, saya ingin berkonsultasi mengenai layanan "${service.nama}". Mohon informasi lebih lanjut.`;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return buildWhatsAppUrl(whatsappNumber, message);
 }
 
-export function LayananDetailClient({ service, relatedServices }: { service: any, relatedServices: any[] }) {
+export function LayananDetailClient({
+  service,
+  relatedServices,
+  whatsappNumber,
+}: {
+  service: ServiceRow;
+  relatedServices: ServiceRow[];
+  whatsappNumber?: string | null;
+}) {
   
   
 
@@ -245,7 +252,7 @@ export function LayananDetailClient({ service, relatedServices }: { service: any
 
                   <div className="space-y-4">
                     <a
-                      href={buildWhatsAppHref(service)}
+                      href={buildWhatsAppHref(service, whatsappNumber)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-6 rounded-lg font-medium transition-colors"
@@ -331,7 +338,7 @@ export function LayananDetailClient({ service, relatedServices }: { service: any
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1, duration: 0.5 }}
               >
-                <Link href={`/layanan/${relatedService.id}`} passHref>
+                <Link href={`/layanan/${relatedService.slug}`} passHref>
                   <div className="group block h-full p-8 rounded-xl bg-card border border-border hover:border-primary/50 transition-all duration-300">
                     <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
                       {relatedService.nama}
@@ -354,11 +361,6 @@ export function LayananDetailClient({ service, relatedServices }: { service: any
       </div>
   );
 }
-
-
-
-
-
 
 
 

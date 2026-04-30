@@ -31,3 +31,5 @@ export default async function AdminTeamPage() {
 
   return <TeamClient initialTeam={data} />;
 }
+
+

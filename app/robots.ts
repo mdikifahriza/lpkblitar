@@ -1,14 +1,15 @@
-﻿import { MetadataRoute } from 'next'
+import { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://hutabaratlawoffice.com' // Replace with your actual domain
+  const baseUrl = getSiteUrl();
 
   return {
     rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/admin/', '/api/', '/_next/'],
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/admin/", "/api/", "/_next/"],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
-  }
+  };
 }

@@ -50,9 +50,9 @@ export function ProfilTim({ team }: ProfilTimProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="mb-12 max-w-4xl mx-auto"
+            className="mb-10 max-w-3xl mx-auto"
           >
-            <div className="group relative rounded-xl overflow-hidden bg-card border border-border p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
+            <div className="group relative rounded-xl overflow-hidden bg-card border border-border p-5 md:p-6 flex flex-col md:flex-row gap-6 items-center">
               <div className="w-full md:w-1/3 aspect-[3/4] relative overflow-hidden rounded-lg">
                 <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent z-10 opacity-80 md:opacity-50" />
                 <SafeImage
@@ -62,16 +62,16 @@ export function ProfilTim({ team }: ProfilTimProps) {
                 />
               </div>
               <div className="w-full md:w-2/3 flex flex-col justify-center relative z-20">
-                <span className="text-primary font-medium tracking-wider text-sm mb-2 block">
+                <span className="text-primary font-medium tracking-wider text-xs mb-2 block">
                   {leader.jabatan}
                 </span>
-                <h3 className="font-serif text-3xl md:text-4xl text-foreground font-bold mb-4">
+                <h3 className="font-serif text-2xl md:text-3xl text-foreground font-bold mb-3">
                   {leader.nama}
                 </h3>
-                <p className="text-primary/80 text-sm mb-6 border-l-2 border-primary pl-4 italic">
+                <p className="text-primary/80 text-sm mb-4 border-l-2 border-primary pl-4 italic">
                   {leader.spesialisasi}
                 </p>
-                <p className="text-muted-foreground leading-relaxed mb-6">
+                <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                   {leader.bio || 'Praktisi hukum berpengalaman yang memimpin tim dengan ketajaman analisa dan kekuatan strategi penyelesaian sengketa.'}
                 </p>
               </div>
@@ -79,7 +79,7 @@ export function ProfilTim({ team }: ProfilTimProps) {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
           {others.map((member, idx) => (
             <motion.div
               key={member.id}
@@ -87,7 +87,7 @@ export function ProfilTim({ team }: ProfilTimProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="group relative rounded-xl overflow-hidden bg-card border border-border aspect-[3/4] cursor-pointer"
+              className="group relative rounded-xl overflow-hidden bg-card border border-border aspect-[4/5] cursor-pointer"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent z-10 opacity-90 transition-opacity duration-300 group-hover:opacity-70" />
               <SafeImage
@@ -96,14 +96,14 @@ export function ProfilTim({ team }: ProfilTimProps) {
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
 
-              <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                <span className="text-primary font-medium tracking-wider text-xs mb-2 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+              <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                <span className="text-primary font-medium tracking-wider text-[10px] mb-1 block opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
                   {member.jabatan}
                 </span>
-                <h3 className="font-serif text-2xl text-foreground font-bold mb-2">
+                <h3 className="font-serif text-xl text-foreground font-bold mb-1">
                   {member.nama}
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs">
                   {member.spesialisasi}
                 </p>
               </div>
@@ -114,6 +114,8 @@ export function ProfilTim({ team }: ProfilTimProps) {
     </section>
   );
 }
+
+
 
 
 

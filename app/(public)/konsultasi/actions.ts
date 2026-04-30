@@ -21,7 +21,9 @@ export async function submitInquiry(data: any) {
           nama: data.namaLengkap,
           no_hp: data.noHp,
           email: data.email || null,
-          pesan: `Jenis Masalah: ${data.jenisMasalah}\nKota: ${data.kota}\n\nKronologi:\n${data.kronologi}`,
+          layanan_id: data.layanan_id || null,
+          pesan: data.kronologi,
+          tempat_tinggal: data.kota, // Added based on new schema
           status: 'baru'
         }
       ]);

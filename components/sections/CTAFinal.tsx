@@ -1,7 +1,9 @@
-﻿import { getSiteSettings } from "@/lib/api/settings";
+import { getContactData } from "@/lib/api/contact";
+import { getSiteSettings } from "@/lib/api/settings";
 import { CTAFinalClient } from "./CTAFinalClient";
 
 export async function CTAFinal() {
-  const settings = await getSiteSettings();
-  return <CTAFinalClient settings={settings} />;
+  const [settings, { contact }] = await Promise.all([getSiteSettings(), getContactData()]);
+
+  return <CTAFinalClient settings={settings} contact={contact} />;
 }

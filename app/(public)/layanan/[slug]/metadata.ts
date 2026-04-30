@@ -1,10 +1,10 @@
-﻿import { getServiceBySlug, getServices } from "@/lib/api/services";
+import { getServiceBySlug } from "@/lib/api/services";
 import { getSiteSettings } from "@/lib/api/settings";
-import type { Metadata, ResolvingMetadata } from "next";
+import { buildSeoExcerpt } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } },
-  parent: ResolvingMetadata
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
   const { slug } = await params;
   const service = await getServiceBySlug(slug);
@@ -12,16 +12,37 @@ export async function generateMetadata(
 
   if (!service) {
     return {
-      title: `Layanan Tidak Ditemukan | ${settings.site_name}`
+      title: {
+        absolute: `Layanan Tidak Ditemukan | ${settings.site_name}`,
+      },
     };
   }
 
+  const title = `${service.nama} | ${settings.site_name}`;
+  const description = buildSeoExcerpt(
+    service.deskripsi_singkat || service.deskripsi_lengkap || `Layanan hukum ${service.nama} dari ${settings.site_name}.`
+  );
+  const ogImageUrl = settings.og_image_default_url || "/images/hero-portrait.png";
+
   return {
-    title: `${service.nama} | ${settings.site_name}`,
-    description: service.deskripsi_singkat,
+    title: {
+      absolute: title,
+    },
+    description,
+    alternates: {
+      canonical: `/layanan/${service.slug}`,
+    },
     openGraph: {
-      title: `${service.nama} | ${settings.site_name}`,
-      description: service.deskripsi_singkat,
+      title,
+      description,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: service.nama,
+        },
+      ],
       type: "website",
     },
   };

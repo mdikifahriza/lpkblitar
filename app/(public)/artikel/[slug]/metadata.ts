@@ -1,10 +1,10 @@
-﻿import { getArticleBySlug, getArticles } from "@/lib/api/articles";
+import { getArticleBySlug } from "@/lib/api/articles";
 import { getSiteSettings } from "@/lib/api/settings";
-import type { Metadata, ResolvingMetadata } from "next";
+import { buildSeoExcerpt } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } },
-  parent: ResolvingMetadata
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
@@ -12,27 +12,30 @@ export async function generateMetadata(
 
   if (!article) {
     return {
-      title: `Artikel Tidak Ditemukan | ${settings.site_name}`
+      title: {
+        absolute: `Artikel Tidak Ditemukan | ${settings.site_name}`,
+      },
     };
   }
 
-  // extract excerpt from content if it's text
-  let description = article.judul;
-  if (typeof article.konten === 'string') {
-    description = article.konten.substring(0, 160) + '...';
-  } else if (Array.isArray(article.konten) && article.konten[0]) {
-    description = article.konten[0].text?.substring(0, 160) + '...';
-  }
+  const title = `${article.judul} | ${settings.site_name}`;
+  const description = buildSeoExcerpt(article.konten || article.judul);
+  const ogImageUrl = article.thumbnail_url || settings.og_image_default_url || "/images/hero-portrait.png";
 
   return {
-    title: `${article.judul} | ${settings.site_name}`,
-    description: description,
+    title: {
+      absolute: title,
+    },
+    description,
+    alternates: {
+      canonical: `/artikel/${article.slug}`,
+    },
     openGraph: {
-      title: article.judul,
-      description: description,
+      title,
+      description,
       images: [
         {
-          url: article.thumbnail_url || (settings as any).og_image_default_url,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
           alt: article.judul,
@@ -43,4 +46,3 @@ export async function generateMetadata(
     },
   };
 }
-

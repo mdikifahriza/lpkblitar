@@ -76,3 +76,5 @@ export function FAQ({ faqs }: FaqProps) {
   );
 }
 
+
+

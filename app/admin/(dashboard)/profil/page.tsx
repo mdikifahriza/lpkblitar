@@ -20,5 +20,25 @@ export default async function ProfilPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return <ProfilClient user={user} />;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nama_lengkap, username, no_hp, foto_url, role")
+    .eq("id", user?.id)
+    .maybeSingle();
+
+  return (
+    <ProfilClient
+      initialProfile={{
+        id: user?.id || "",
+        fullName: profile?.nama_lengkap || user?.user_metadata?.full_name || "",
+        username: profile?.username || "",
+        email: user?.email || "",
+        phone: profile?.no_hp || "",
+        role: profile?.role || "admin",
+        avatarUrl: profile?.foto_url || user?.user_metadata?.avatar_url || "",
+      }}
+    />
+  );
 }
+
+

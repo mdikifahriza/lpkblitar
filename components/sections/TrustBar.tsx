@@ -5,3 +5,5 @@ export async function TrustBar() {
   const settings = await getSiteSettings();
   return <TrustBarClient settings={settings} />;
 }
+
+

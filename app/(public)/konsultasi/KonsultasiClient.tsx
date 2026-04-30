@@ -20,13 +20,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { ContactSettingsRecord } from "@/lib/api/contact";
+import { buildWhatsAppUrl } from "@/lib/contact";
 import { submitInquiry } from "./actions";
 
 // Form Schema
 const formSchema = z.object({
-  jenisMasalah: z.string().min(1, { message: "Pilih jenis masalah Anda" }),
+  layanan_id: z.string().min(1, { message: "Pilih jenis masalah Anda" }),
   namaLengkap: z.string().min(2, { message: "Nama wajib diisi" }),
-  noHp: z.string().min(10, { message: "Nomor HP tidak valid" }),
+  noHp: z.string()
+    .min(11, { message: "Nomor HP minimal 11 digit angka" })
+    .regex(/^0[0-9]+$/, { message: "Nomor harus diawali dengan 0 dan hanya berisi angka (contoh: 0812...)" }),
   email: z.string().email({ message: "Email tidak valid" }).optional().or(z.literal("")),
   kota: z.string().min(2, { message: "Kota wajib diisi" }),
   kronologi: z.string().min(20, { message: "Mohon ceritakan kronologi secara lebih detail" }),
@@ -35,24 +39,27 @@ const formSchema = z.object({
   }),
 });
 
-const MASALAH_OPTIONS = [
-  "Sengketa Perbankan / Kredit",
-  "Gugatan Perdata (PMH / Wanprestasi)",
-  "Perlindungan Konsumen",
-  "Masalah Lelang & Jaminan",
-  "Sengketa Bisnis & Perusahaan",
-  "Lainnya"
-];
+type ServiceSummary = {
+  id: string;
+  nama: string;
+};
 
-export function KonsultasiClient({ settings }: { settings: any }) {
+export function KonsultasiClient({
+  contact,
+  services,
+}: {
+  contact: ContactSettingsRecord;
+  services: ServiceSummary[];
+}) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const whatsappUrl = buildWhatsAppUrl(contact.whatsapp_number);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      jenisMasalah: "",
+      layanan_id: "",
       namaLengkap: "",
       noHp: "",
       email: "",
@@ -65,7 +72,7 @@ export function KonsultasiClient({ settings }: { settings: any }) {
   const nextStep = async () => {
     let isValid = false;
     if (step === 1) {
-      isValid = await form.trigger(["jenisMasalah"]);
+      isValid = await form.trigger(["layanan_id"]);
     } else if (step === 2) {
       isValid = await form.trigger(["namaLengkap", "noHp", "email", "kota"]);
     } else if (step === 3) {
@@ -90,8 +97,17 @@ export function KonsultasiClient({ settings }: { settings: any }) {
         setIsSubmitting(false);
       } else {
         setIsSuccess(true);
+        
+        // Prepare WhatsApp Message
+        const selectedService = services.find(s => s.id === values.layanan_id)?.nama || "Lainnya";
+        const waMessage = `*Pesan Konsultasi Baru dari Website*\n\nNama: ${values.namaLengkap}\nNo. HP: ${values.noHp}\nEmail: ${values.email || '-'}\nKota: ${values.kota}\nLayanan Terkait: ${selectedService}\n\n*Kronologi Masalah:*\n${values.kronologi}`;
+        
+        const waUrl = buildWhatsAppUrl(contact.whatsapp_number, waMessage);
+        
+        // Open WhatsApp in new tab
+        window.open(waUrl, '_blank');
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan sistem. Silakan hubungi via WhatsApp.");
       setIsSubmitting(false);
     }
@@ -104,18 +120,17 @@ export function KonsultasiClient({ settings }: { settings: any }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-card border border-border rounded-2xl p-10 md:p-16 max-w-xl w-full text-center mx-4"
+          className="bg-card border border-border rounded-2xl p-10 md:p-16 max-w-xl w-full text-center mx-4 shadow-xl"
         >
-          <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
+          <div className="w-20 h-20 bg-green-500/10 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
             <CheckCircle2 className="w-10 h-10" />
           </div>
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
             Terima Kasih!
           </h2>
           <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-            Data konsultasi awal Anda telah kami terima. Tim hukum kami akan segera
-            meninjau informasi ini dan menghubungi Anda melalui nomor WhatsApp yang
-            diberikan dalam 1x24 jam kerja.
+            Data konsultasi awal Anda telah kami terima dan juga diarahkan ke WhatsApp kami. Tim hukum kami akan segera
+            meninjau informasi ini dan membalas pesan Anda.
           </p>
           <Link href="/">
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 uppercase tracking-wider font-bold">
@@ -153,7 +168,7 @@ export function KonsultasiClient({ settings }: { settings: any }) {
             
             {/* Left: Form */}
             <div className="lg:w-3/5">
-              <div className="bg-card border border-border rounded-xl p-6 md:p-10 shadow-2xl">
+              <div className="bg-card border border-border rounded-xl p-6 md:p-10 shadow-lg">
                 {/* Progress Bar */}
                 <div className="mb-10">
                   <div className="flex justify-between mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -190,30 +205,30 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                           </h3>
                           <FormField
                             control={form.control}
-                            name="jenisMasalah"
+                            name="layanan_id"
                             render={({ field }) => (
                               <FormItem className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {MASALAH_OPTIONS.map((opt) => (
+                                  {services.map((srv) => (
                                     <div
-                                      key={opt}
-                                      onClick={() => field.onChange(opt)}
+                                      key={srv.id}
+                                      onClick={() => field.onChange(srv.id)}
                                       className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                                        field.value === opt
+                                        field.value === srv.id
                                           ? "border-primary bg-primary/10 text-primary"
                                           : "border-border bg-background text-muted-foreground hover:border-border hover:text-foreground"
                                       }`}
                                     >
                                       <div className="flex items-center gap-3">
-                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${field.value === opt ? "border-primary" : "border-border"}`}>
-                                          {field.value === opt && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        <div className={`w-4 h-4 shrink-0 rounded-full border flex items-center justify-center ${field.value === srv.id ? "border-primary" : "border-muted-foreground"}`}>
+                                          {field.value === srv.id && <div className="w-2 h-2 rounded-full bg-primary" />}
                                         </div>
-                                        <span className="font-medium">{opt}</span>
+                                        <span className="font-medium text-sm leading-tight">{srv.nama}</span>
                                       </div>
                                     </div>
                                   ))}
                                 </div>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage className="text-red-500 font-medium mt-2" />
                               </FormItem>
                             )}
                           />
@@ -240,9 +255,9 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                               <FormItem>
                                 <FormLabel className="text-foreground">Nama Lengkap *</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="John Doe" {...field} className="bg-background border-border text-foreground h-12" />
+                                  <Input placeholder="John Doe" {...field} className="bg-background border-border text-foreground h-12 focus-visible:ring-primary" />
                                 </FormControl>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage className="text-red-500 font-medium" />
                               </FormItem>
                             )}
                           />
@@ -254,9 +269,10 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                                 <FormItem>
                                   <FormLabel className="text-foreground">No. WhatsApp *</FormLabel>
                                   <FormControl>
-                                    <Input placeholder="08123456789" type="tel" {...field} className="bg-background border-border text-foreground h-12" />
+                                    <Input placeholder="081234567890" type="tel" {...field} className="bg-background border-border text-foreground h-12 focus-visible:ring-primary" />
                                   </FormControl>
-                                  <FormMessage className="text-red-400" />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Gunakan angka saja diawali dengan 0 (Bukan +62).</p>
+                                  <FormMessage className="text-red-500 font-medium" />
                                 </FormItem>
                               )}
                             />
@@ -267,9 +283,9 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                                 <FormItem>
                                   <FormLabel className="text-foreground">Email (Opsional)</FormLabel>
                                   <FormControl>
-                                    <Input placeholder="email@contoh.com" type="email" {...field} className="bg-background border-border text-foreground h-12" />
+                                    <Input placeholder="email@contoh.com" type="email" {...field} className="bg-background border-border text-foreground h-12 focus-visible:ring-primary" />
                                   </FormControl>
-                                  <FormMessage className="text-red-400" />
+                                  <FormMessage className="text-red-500 font-medium" />
                                 </FormItem>
                               )}
                             />
@@ -281,9 +297,9 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                               <FormItem>
                                 <FormLabel className="text-foreground">Kota Domisili *</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Contoh: Blitar" {...field} className="bg-background border-border text-foreground h-12" />
+                                  <Input placeholder="Contoh: Blitar" {...field} className="bg-background border-border text-foreground h-12 focus-visible:ring-primary" />
                                 </FormControl>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage className="text-red-500 font-medium" />
                               </FormItem>
                             )}
                           />
@@ -308,15 +324,15 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                             name="kronologi"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-foreground">Ceritakan Kronologi Masalah Anda *</FormLabel>
+                                <FormLabel className="text-foreground">Ceritakan Pesan / Kronologi Anda *</FormLabel>
                                 <FormControl>
                                   <Textarea 
-                                    placeholder="Jelaskan sejak kapan masalah terjadi, siapa saja pihak yang terlibat, dan apa kerugian yang dialami..." 
-                                    className="bg-background border-border text-foreground min-h-[200px] resize-y"
+                                    placeholder="Jelaskan secara detail pesan atau kronologi hukum Anda di sini..." 
+                                    className="bg-background border-border text-foreground min-h-[250px] resize-y focus-visible:ring-primary leading-relaxed"
                                     {...field} 
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage className="text-red-500 font-medium" />
                               </FormItem>
                             )}
                           />
@@ -339,12 +355,16 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                           
                           <div className="bg-background border border-border rounded-lg p-6 space-y-4 mb-6">
                             <div>
-                              <span className="text-muted-foreground text-sm block mb-1">Masalah:</span>
-                              <span className="text-foreground font-medium">{form.getValues().jenisMasalah}</span>
+                              <span className="text-muted-foreground text-sm block mb-1">Layanan Pilihan:</span>
+                              <span className="text-foreground font-medium">{services.find(s => s.id === form.getValues().layanan_id)?.nama || "Lainnya"}</span>
                             </div>
                             <div>
                               <span className="text-muted-foreground text-sm block mb-1">Pengirim:</span>
                               <span className="text-foreground font-medium">{form.getValues().namaLengkap} ({form.getValues().noHp})</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground text-sm block mb-1">Domisili:</span>
+                              <span className="text-foreground font-medium">{form.getValues().kota}</span>
                             </div>
                           </div>
 
@@ -355,17 +375,17 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border bg-background p-4">
                                 <FormControl>
                                   <div 
-                                    className={`w-5 h-5 rounded border mt-0.5 flex items-center justify-center cursor-pointer ${field.value ? "bg-primary border-primary" : "border-border"}`}
+                                    className={`shrink-0 w-5 h-5 rounded border mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${field.value ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary"}`}
                                     onClick={() => field.onChange(!field.value)}
                                   >
-                                    {field.value && <CheckCircle2 className="w-3.5 h-3.5 text-[#0d1117]" />}
+                                    {field.value && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
                                   </div>
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                   <FormLabel className="text-muted-foreground font-normal leading-relaxed cursor-pointer" onClick={() => field.onChange(!field.value)}>
                                     Saya menyatakan bahwa informasi yang saya berikan adalah benar dan saya menyetujui data ini diolah oleh tim konsultan hukum untuk keperluan analisa awal perkara.
                                   </FormLabel>
-                                  <FormMessage className="text-red-400 pt-2" />
+                                  <FormMessage className="text-red-500 font-medium pt-2" />
                                 </div>
                               </FormItem>
                             )}
@@ -391,7 +411,7 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                         <Button
                           type="button"
                           onClick={nextStep}
-                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                         >
                           Lanjut
                           <ChevronRight className="w-4 h-4 ml-2" />
@@ -400,9 +420,9 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                         <Button
                           type="submit"
                           disabled={isSubmitting}
-                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                         >
-                          {isSubmitting ? "Mengirim..." : "Kirim Konsultasi"}
+                          {isSubmitting ? "Mengirim..." : "Kirim & Lanjut WA"}
                         </Button>
                       )}
                     </div>
@@ -414,7 +434,7 @@ export function KonsultasiClient({ settings }: { settings: any }) {
             {/* Right: Contact Info */}
             <div className="lg:w-2/5">
               <div className="sticky top-32 space-y-8">
-                <div className="bg-secondary border border-border rounded-xl p-8">
+                <div className="bg-secondary border border-border rounded-xl p-8 shadow-sm">
                   <h3 className="font-serif text-2xl text-foreground font-bold mb-6">
                     Kontak Alternatif
                   </h3>
@@ -428,9 +448,12 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                         <Phone className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <span className="block text-muted-foreground text-sm mb-1">WhatsApp / Telepon</span>
-                        <a href={`https://wa.me/${settings.whatsapp_number || '6281234567890'}`} className="text-foreground font-medium hover:text-primary transition-colors">
-                          +{settings.whatsapp_number || "6281234567890"}
+                        <span className="block text-muted-foreground text-sm mb-1">WhatsApp</span>
+                        <a
+                          href={whatsappUrl}
+                          className="text-foreground font-medium hover:text-primary transition-colors"
+                        >
+                          {contact.whatsapp_number || "6281234567890"}
                         </a>
                       </div>
                     </li>
@@ -440,8 +463,8 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                       </div>
                       <div>
                         <span className="block text-muted-foreground text-sm mb-1">Email</span>
-                        <a href={`mailto:${settings.email || 'info@hutabaratlawoffice.com'}`} className="text-foreground font-medium hover:text-primary transition-colors">
-                          {settings.email || "info@hutabaratlawoffice.com"}
+                        <a href={`mailto:${contact.email || 'info@hutabaratlawoffice.com'}`} className="text-foreground font-medium hover:text-primary transition-colors">
+                          {contact.email || "info@hutabaratlawoffice.com"}
                         </a>
                       </div>
                     </li>
@@ -452,14 +475,14 @@ export function KonsultasiClient({ settings }: { settings: any }) {
                       <div>
                         <span className="block text-muted-foreground text-sm mb-1">Alamat Kantor</span>
                         <span className="text-foreground font-medium leading-relaxed block">
-                          {settings.alamat || "Blitar, Jawa Timur"}
+                          {contact.alamat || "Blitar, Jawa Timur"}
                         </span>
                       </div>
                     </li>
                   </ul>
                 </div>
 
-                <div className="bg-primary/10 border border-primary/20 rounded-xl p-8">
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-8">
                   <h3 className="font-serif text-xl text-primary font-bold mb-4 flex items-center gap-3">
                     <FileText className="w-5 h-5" />
                     Yang Terjadi Selanjutnya
