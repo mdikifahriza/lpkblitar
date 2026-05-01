@@ -47,7 +47,7 @@
 :root {
   color-scheme: light;
   /* Permitindo Light Palette */
-  --background: 0 0% 100%;
+  --background: 212 30% 88%; /* #D8E0E9 rgb(216, 224, 233) */
   --foreground: 204 23% 11%;
 
   --border: 214 15% 84%;
