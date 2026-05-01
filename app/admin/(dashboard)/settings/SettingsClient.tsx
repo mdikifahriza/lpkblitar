@@ -1,16 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Globe, ImageIcon, Loader2, PencilLine, Save, Search, Settings2, X } from "lucide-react";
+import {
+  Globe,
+  ImageIcon,
+  Loader2,
+  PencilLine,
+  Save,
+  Search,
+  Settings2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadFileToSupabase } from "@/app/admin/upload-action";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SafeImage } from "@/components/ui/safe-image";
@@ -38,6 +61,7 @@ const seoSchema = z.object({
   google_verification: z.string().optional(),
 });
 
+type SettingsTab = "identitas" | "hero" | "seo";
 type AssetKey = "logo_url" | "hero_image_url" | "og_image_default_url" | "favicon_url";
 
 type PendingAsset = {
@@ -118,17 +142,27 @@ function SettingsField({
   );
 }
 
+function getTabLabel(tab: SettingsTab) {
+  switch (tab) {
+    case "identitas":
+      return "Identitas";
+    case "hero":
+      return "Hero";
+    case "seo":
+      return "SEO";
+    default:
+      return "Pengaturan";
+  }
+}
+
 export function SettingsClient({ initialSettings }: { initialSettings: Record<string, string> }) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<SettingsTab>("identitas");
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<AssetKey | null>(null);
   const [pendingAssets, setPendingAssets] = useState<PendingAssetMap>({});
   const pendingAssetsRef = useRef<PendingAssetMap>({});
-  const logoUrl = pendingAssets.logo_url?.previewUrl ?? initialSettings.logo_url ?? "";
-  const heroImageUrl = pendingAssets.hero_image_url?.previewUrl ?? initialSettings.hero_image_url ?? "";
-  const ogImageUrl = pendingAssets.og_image_default_url?.previewUrl ?? initialSettings.og_image_default_url ?? "";
-  const faviconUrl = pendingAssets.favicon_url?.previewUrl ?? initialSettings.favicon_url ?? "";
 
   const identitasForm = useForm<z.infer<typeof identitasSchema>>({
     resolver: zodResolver(identitasSchema),
@@ -159,11 +193,16 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
     },
   });
 
-  useEffect(() => {
-    pendingAssetsRef.current = pendingAssets;
-  }, [pendingAssets]);
+  const viewLogoUrl = initialSettings.logo_url || "";
+  const viewHeroImageUrl = initialSettings.hero_image_url || "";
+  const viewOgImageUrl = initialSettings.og_image_default_url || "";
+  const viewFaviconUrl = initialSettings.favicon_url || "";
+  const editLogoUrl = pendingAssets.logo_url?.previewUrl ?? viewLogoUrl;
+  const editHeroImageUrl = pendingAssets.hero_image_url?.previewUrl ?? viewHeroImageUrl;
+  const editOgImageUrl = pendingAssets.og_image_default_url?.previewUrl ?? viewOgImageUrl;
+  const editFaviconUrl = pendingAssets.favicon_url?.previewUrl ?? viewFaviconUrl;
 
-  useEffect(() => {
+  const resetForms = useCallback(() => {
     identitasForm.reset({
       site_name: initialSettings.site_name || "",
       site_tagline: initialSettings.site_tagline || "",
@@ -184,6 +223,14 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
       google_verification: initialSettings.google_verification || "",
     });
   }, [heroForm, identitasForm, initialSettings, seoForm]);
+
+  useEffect(() => {
+    pendingAssetsRef.current = pendingAssets;
+  }, [pendingAssets]);
+
+  useEffect(() => {
+    resetForms();
+  }, [resetForms]);
 
   useEffect(() => {
     return () => {
@@ -209,33 +256,25 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
     });
   }
 
-  function handleCancelEdit() {
-    identitasForm.reset({
-      site_name: initialSettings.site_name || "",
-      site_tagline: initialSettings.site_tagline || "",
-      site_description: initialSettings.site_description || "",
-    });
-
-    heroForm.reset({
-      hero_badge: initialSettings.hero_badge || "",
-      hero_heading: initialSettings.hero_heading || "",
-      hero_subheading: initialSettings.hero_subheading || "",
-      hero_cta_primary: initialSettings.hero_cta_primary || "",
-      hero_cta_secondary: initialSettings.hero_cta_secondary || "",
-    });
-
-    seoForm.reset({
-      tab_title: initialSettings.tab_title || "",
-      tab_title_template: initialSettings.tab_title_template || "",
-      google_verification: initialSettings.google_verification || "",
-    });
-
+  function openEditDialog() {
+    resetForms();
     clearPendingAssets();
-    setIsEditing(false);
+    setIsEditDialogOpen(true);
   }
 
-  async function uploadPendingAsset(assetKey: AssetKey) {
-    const pendingAsset = pendingAssetsRef.current[assetKey];
+  function handleCancelEdit() {
+    if (isLoading) {
+      return;
+    }
+
+    resetForms();
+    clearPendingAssets();
+    setUploadingAsset(null);
+    setIsEditDialogOpen(false);
+  }
+
+  async function uploadPendingAsset(assetKey: AssetKey, assets: PendingAssetMap) {
+    const pendingAsset = assets[assetKey];
 
     if (!pendingAsset) {
       return null;
@@ -266,9 +305,10 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
 
     try {
       const payload: Record<string, string> = { ...values };
+      const selectedAssets = { ...pendingAssets };
 
       for (const assetKey of assetKeys) {
-        const uploadedUrl = await uploadPendingAsset(assetKey);
+        const uploadedUrl = await uploadPendingAsset(assetKey, selectedAssets);
 
         if (uploadedUrl) {
           payload[assetKey] = uploadedUrl;
@@ -283,7 +323,7 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
       } else {
         toast.success(`Pengaturan ${formName} berhasil disimpan`);
         clearPendingAssets();
-        setIsEditing(false);
+        setIsEditDialogOpen(false);
         router.refresh();
       }
     } catch (error: unknown) {
@@ -350,23 +390,14 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
       <AdminPageHeader
         title="Pengaturan Global"
         action={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            {isEditing ? (
-              <Button variant="outline" onClick={handleCancelEdit} disabled={isLoading || Boolean(uploadingAsset)}>
-                <X className="mr-2 h-4 w-4" />
-                Batal
-              </Button>
-            ) : (
-              <Button onClick={() => setIsEditing(true)} className="font-bold">
-                <PencilLine className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            )}
-          </div>
+          <Button onClick={openEditDialog} className="font-bold" disabled={isLoading}>
+            <PencilLine className="mr-2 h-4 w-4" />
+            Edit {getTabLabel(activeTab)}
+          </Button>
         }
       />
 
-      <Tabs defaultValue="identitas" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)} className="space-y-6">
         <TabsList className="grid h-auto grid-cols-1 border border-border bg-card p-1 md:grid-cols-3">
           <TabsTrigger
             value="identitas"
@@ -395,113 +426,20 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
           <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
             <div className="space-y-5 border-b border-border pb-8">
               <h2 className="font-serif text-2xl font-semibold text-foreground">Logo</h2>
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-                <div className="flex h-24 w-56 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-3">
-                  {logoUrl ? (
-                    <SafeImage src={logoUrl} alt="Logo Web" className="max-h-full max-w-full object-contain" />
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Belum ada logo</span>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {isEditing ? (
-                    <label htmlFor="logo-upload">
-                      <Button
-                        asChild
-                        variant="outline"
-                        disabled={isLoading}
-                        className="cursor-pointer"
-                      >
-                        <span>
-                          {pendingAssets.logo_url ? <ImageIcon className="mr-2 h-4 w-4" /> : null}
-                          {pendingAssets.logo_url ? "Ganti Logo" : "Pilih Logo"}
-                        </span>
-                      </Button>
-                    </label>
-                  ) : null}
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept={ASSET_CONFIGS.logo_url.accept}
-                    className="hidden"
-                    onChange={(event) => handleAssetSelect(event, ASSET_CONFIGS.logo_url)}
-                    disabled={isLoading}
-                  />
-                  {pendingAssets.logo_url ? (
-                    <p className="text-xs text-muted-foreground">Logo baru akan diunggah saat Anda menekan Simpan.</p>
-                  ) : null}
-                </div>
+              <div className="flex h-24 w-56 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-3">
+                {viewLogoUrl ? (
+                  <SafeImage src={viewLogoUrl} alt="Logo Web" className="max-h-full max-w-full object-contain" />
+                ) : (
+                  <span className="text-sm text-muted-foreground">Belum ada logo</span>
+                )}
               </div>
             </div>
 
-            <Form {...identitasForm}>
-              <form
-                onSubmit={identitasForm.handleSubmit((values) => onSubmit(values, "Identitas", ["logo_url"]))}
-                className="space-y-6"
-              >
-                {isEditing ? (
-                  <>
-                    <FormField
-                      control={identitasForm.control}
-                      name="site_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nama Kantor</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={identitasForm.control}
-                      name="site_tagline"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tagline</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={identitasForm.control}
-                      name="site_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Deskripsi Singkat</FormLabel>
-                          <FormControl>
-                            <Textarea className="min-h-[110px]" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" disabled={isLoading} className="font-bold">
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                      Simpan
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-6">
-                    <SettingsField label="Nama Kantor" value={identitasForm.getValues("site_name")} />
-                    <SettingsField label="Tagline" value={identitasForm.getValues("site_tagline")} />
-                    <SettingsField
-                      label="Deskripsi Singkat"
-                      value={identitasForm.getValues("site_description")}
-                      multiline
-                    />
-                  </div>
-                )}
-              </form>
-            </Form>
+            <div className="space-y-6">
+              <SettingsField label="Nama Kantor" value={initialSettings.site_name} />
+              <SettingsField label="Tagline" value={initialSettings.site_tagline} />
+              <SettingsField label="Deskripsi Singkat" value={initialSettings.site_description} multiline />
+            </div>
           </div>
         </TabsContent>
 
@@ -509,149 +447,365 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
           <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
             <div className="space-y-5 border-b border-border pb-8">
               <h2 className="font-serif text-2xl font-semibold text-foreground">Foto Hero</h2>
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                <div className="flex h-72 w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
-                  {heroImageUrl ? (
-                    <SafeImage src={heroImageUrl} alt="Foto Hero" className="h-full w-full object-cover object-top" />
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Belum ada foto hero</span>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {isEditing ? (
-                    <label htmlFor="hero-image-upload">
-                      <Button
-                        asChild
-                        variant="outline"
-                        disabled={isLoading}
-                        className="cursor-pointer"
-                      >
-                        <span>
-                          <ImageIcon className="mr-2 h-4 w-4" />
-                          {pendingAssets.hero_image_url ? "Ganti Foto Hero" : "Pilih Foto Hero"}
-                        </span>
-                      </Button>
-                    </label>
-                  ) : null}
-                  <input
-                    id="hero-image-upload"
-                    type="file"
-                    accept={ASSET_CONFIGS.hero_image_url.accept}
-                    className="hidden"
-                    onChange={(event) => handleAssetSelect(event, ASSET_CONFIGS.hero_image_url)}
-                    disabled={isLoading}
+              <div className="flex h-72 w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
+                {viewHeroImageUrl ? (
+                  <SafeImage
+                    src={viewHeroImageUrl}
+                    alt="Foto Hero"
+                    className="h-full w-full object-cover object-top"
                   />
-                  {pendingAssets.hero_image_url ? (
-                    <p className="text-xs text-muted-foreground">
-                      Foto hero baru akan diunggah saat Anda menekan Simpan.
-                    </p>
-                  ) : null}
-                </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Belum ada foto hero</span>
+                )}
               </div>
             </div>
 
+            <div className="space-y-6">
+              <SettingsField label="Badge" value={initialSettings.hero_badge} />
+              <SettingsField label="Heading" value={initialSettings.hero_heading} multiline />
+              <SettingsField label="Subheading" value={initialSettings.hero_subheading} multiline />
+              <div className="grid gap-6 md:grid-cols-2">
+                <SettingsField label="CTA Utama" value={initialSettings.hero_cta_primary} />
+                <SettingsField label="CTA Kedua" value={initialSettings.hero_cta_secondary} />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="seo">
+          <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
+            <div className="space-y-6">
+              <SettingsField label="Judul Tab" value={initialSettings.tab_title} />
+              <SettingsField label="Template Judul Halaman" value={initialSettings.tab_title_template} />
+              <SettingsField label="Google Verification" value={initialSettings.google_verification} />
+            </div>
+
+            <div className="grid gap-6 border-t border-border pt-6 lg:grid-cols-2">
+              <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
+                <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+                  {viewOgImageUrl ? (
+                    <SafeImage
+                      src={viewOgImageUrl}
+                      alt="OG Image Default"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Belum ada OG image</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="font-medium text-foreground">OG Image Default</p>
+                  <p className="text-sm text-muted-foreground">
+                    Dipakai untuk preview saat halaman dibagikan jika halaman itu tidak punya gambar sendiri.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
+                <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+                  {viewFaviconUrl ? (
+                    <SafeImage
+                      src={viewFaviconUrl}
+                      alt="Favicon"
+                      className="h-16 w-16 rounded-xl object-contain"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Belum ada favicon</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="font-medium text-foreground">Favicon</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ikon kecil di tab browser. Upload dibatasi hanya untuk file ICO.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsEditDialogOpen(true);
+          } else {
+            handleCancelEdit();
+          }
+        }}
+      >
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto sm:max-w-4xl"
+          onInteractOutside={(event) => {
+            if (isLoading) {
+              event.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(event) => {
+            if (isLoading) {
+              event.preventDefault();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-foreground">
+              Edit {getTabLabel(activeTab)}
+            </DialogTitle>
+          </DialogHeader>
+
+          {activeTab === "identitas" ? (
+            <Form {...identitasForm}>
+              <form
+                onSubmit={identitasForm.handleSubmit((values) => onSubmit(values, "Identitas", ["logo_url"]))}
+                className="space-y-6"
+              >
+                <div className="space-y-5 border-b border-border pb-8">
+                  <h2 className="font-serif text-2xl font-semibold text-foreground">Logo</h2>
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+                    <div className="flex h-24 w-56 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-3">
+                      {editLogoUrl ? (
+                        <SafeImage src={editLogoUrl} alt="Logo Web" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Belum ada logo</span>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <label htmlFor="logo-upload">
+                        <Button
+                          asChild
+                          variant="outline"
+                          disabled={isLoading}
+                          className="cursor-pointer"
+                        >
+                          <span>
+                            {pendingAssets.logo_url ? <ImageIcon className="mr-2 h-4 w-4" /> : null}
+                            {pendingAssets.logo_url ? "Ganti Logo" : "Pilih Logo"}
+                          </span>
+                        </Button>
+                      </label>
+                      <input
+                        id="logo-upload"
+                        type="file"
+                        accept={ASSET_CONFIGS.logo_url.accept}
+                        className="hidden"
+                        onChange={(event) => handleAssetSelect(event, ASSET_CONFIGS.logo_url)}
+                        disabled={isLoading}
+                      />
+                      {pendingAssets.logo_url ? (
+                        <p className="text-xs text-muted-foreground">
+                          Logo baru akan diunggah saat Anda menekan Simpan.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <FormField
+                  control={identitasForm.control}
+                  name="site_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Kantor</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={identitasForm.control}
+                  name="site_tagline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tagline</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={identitasForm.control}
+                  name="site_description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Deskripsi Singkat</FormLabel>
+                      <FormControl>
+                        <Textarea className="min-h-[110px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isLoading || Boolean(uploadingAsset)}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={isLoading} className="font-bold">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Simpan
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          ) : null}
+
+          {activeTab === "hero" ? (
             <Form {...heroForm}>
               <form
                 onSubmit={heroForm.handleSubmit((values) => onSubmit(values, "Hero", ["hero_image_url"]))}
                 className="space-y-6"
               >
-                {isEditing ? (
-                  <>
-                    <FormField
-                      control={heroForm.control}
-                      name="hero_badge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Badge</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                <div className="space-y-5 border-b border-border pb-8">
+                  <h2 className="font-serif text-2xl font-semibold text-foreground">Foto Hero</h2>
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                    <div className="flex h-72 w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
+                      {editHeroImageUrl ? (
+                        <SafeImage
+                          src={editHeroImageUrl}
+                          alt="Foto Hero"
+                          className="h-full w-full object-cover object-top"
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Belum ada foto hero</span>
                       )}
-                    />
-
-                    <FormField
-                      control={heroForm.control}
-                      name="hero_heading"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Heading</FormLabel>
-                          <FormControl>
-                            <Textarea className="min-h-[90px]" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={heroForm.control}
-                      name="hero_subheading"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subheading</FormLabel>
-                          <FormControl>
-                            <Textarea className="min-h-[120px]" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <FormField
-                        control={heroForm.control}
-                        name="hero_cta_primary"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CTA Utama</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={heroForm.control}
-                        name="hero_cta_secondary"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CTA Kedua</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
-                    <Button type="submit" disabled={isLoading} className="font-bold">
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                      Simpan
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-6">
-                    <SettingsField label="Badge" value={heroForm.getValues("hero_badge")} />
-                    <SettingsField label="Heading" value={heroForm.getValues("hero_heading")} multiline />
-                    <SettingsField label="Subheading" value={heroForm.getValues("hero_subheading")} multiline />
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <SettingsField label="CTA Utama" value={heroForm.getValues("hero_cta_primary")} />
-                      <SettingsField label="CTA Kedua" value={heroForm.getValues("hero_cta_secondary")} />
+                    <div className="space-y-3">
+                      <label htmlFor="hero-image-upload">
+                        <Button
+                          asChild
+                          variant="outline"
+                          disabled={isLoading}
+                          className="cursor-pointer"
+                        >
+                          <span>
+                            <ImageIcon className="mr-2 h-4 w-4" />
+                            {pendingAssets.hero_image_url ? "Ganti Foto Hero" : "Pilih Foto Hero"}
+                          </span>
+                        </Button>
+                      </label>
+                      <input
+                        id="hero-image-upload"
+                        type="file"
+                        accept={ASSET_CONFIGS.hero_image_url.accept}
+                        className="hidden"
+                        onChange={(event) => handleAssetSelect(event, ASSET_CONFIGS.hero_image_url)}
+                        disabled={isLoading}
+                      />
+                      {pendingAssets.hero_image_url ? (
+                        <p className="text-xs text-muted-foreground">
+                          Foto hero baru akan diunggah saat Anda menekan Simpan.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
-                )}
+                </div>
+
+                <FormField
+                  control={heroForm.control}
+                  name="hero_badge"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Badge</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={heroForm.control}
+                  name="hero_heading"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Heading</FormLabel>
+                      <FormControl>
+                        <Textarea className="min-h-[90px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={heroForm.control}
+                  name="hero_subheading"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subheading</FormLabel>
+                      <FormControl>
+                        <Textarea className="min-h-[120px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <FormField
+                    control={heroForm.control}
+                    name="hero_cta_primary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CTA Utama</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={heroForm.control}
+                    name="hero_cta_secondary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CTA Kedua</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isLoading || Boolean(uploadingAsset)}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={isLoading} className="font-bold">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Simpan
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
-          </div>
-        </TabsContent>
+          ) : null}
 
-        <TabsContent value="seo">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
+          {activeTab === "seo" ? (
             <Form {...seoForm}>
               <form
                 onSubmit={seoForm.handleSubmit((values) =>
@@ -659,72 +813,56 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                 )}
                 className="space-y-6"
               >
-                {isEditing ? (
-                  <>
-                    <FormField
-                      control={seoForm.control}
-                      name="tab_title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Judul Tab</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={seoForm.control}
+                  name="tab_title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Judul Tab</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <div className="grid gap-6">
-                      <FormField
-                        control={seoForm.control}
-                        name="tab_title_template"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Template Judul Halaman</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                <div className="grid gap-6">
+                  <FormField
+                    control={seoForm.control}
+                    name="tab_title_template"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Template Judul Halaman</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      <FormField
-                        control={seoForm.control}
-                        name="google_verification"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Google Verification</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-6">
-                    <SettingsField label="Judul Tab" value={seoForm.getValues("tab_title")} />
-                    <SettingsField
-                      label="Template Judul Halaman"
-                      value={seoForm.getValues("tab_title_template")}
-                    />
-                    <SettingsField
-                      label="Google Verification"
-                      value={seoForm.getValues("google_verification")}
-                    />
-                  </div>
-                )}
+                  <FormField
+                    control={seoForm.control}
+                    name="google_verification"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Google Verification</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid gap-6 border-t border-border pt-6 lg:grid-cols-2">
                   <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
                     <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
-                      {ogImageUrl ? (
+                      {editOgImageUrl ? (
                         <SafeImage
-                          src={ogImageUrl}
+                          src={editOgImageUrl}
                           alt="OG Image Default"
                           className="h-full w-full object-cover"
                         />
@@ -738,21 +876,19 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                         Dipakai untuk preview saat halaman dibagikan jika halaman itu tidak punya gambar sendiri.
                       </p>
                     </div>
-                    {isEditing ? (
-                      <label htmlFor="og-image-upload">
-                        <Button
-                          asChild
-                          variant="outline"
-                          disabled={isLoading}
-                          className="w-full cursor-pointer"
-                        >
-                          <span>
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                            {pendingAssets.og_image_default_url ? "Ganti OG Image" : "Pilih OG Image"}
-                          </span>
-                        </Button>
-                      </label>
-                    ) : null}
+                    <label htmlFor="og-image-upload">
+                      <Button
+                        asChild
+                        variant="outline"
+                        disabled={isLoading}
+                        className="w-full cursor-pointer"
+                      >
+                        <span>
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                          {pendingAssets.og_image_default_url ? "Ganti OG Image" : "Pilih OG Image"}
+                        </span>
+                      </Button>
+                    </label>
                     <input
                       id="og-image-upload"
                       type="file"
@@ -770,9 +906,9 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
 
                   <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
                     <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
-                      {faviconUrl ? (
+                      {editFaviconUrl ? (
                         <SafeImage
-                          src={faviconUrl}
+                          src={editFaviconUrl}
                           alt="Favicon"
                           className="h-16 w-16 rounded-xl object-contain"
                         />
@@ -786,21 +922,19 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                         Ikon kecil di tab browser. Upload dibatasi hanya untuk file ICO.
                       </p>
                     </div>
-                    {isEditing ? (
-                      <label htmlFor="favicon-upload">
-                        <Button
-                          asChild
-                          variant="outline"
-                          disabled={isLoading}
-                          className="w-full cursor-pointer"
-                        >
-                          <span>
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                            {pendingAssets.favicon_url ? "Ganti Favicon" : "Pilih Favicon"}
-                          </span>
-                        </Button>
-                      </label>
-                    ) : null}
+                    <label htmlFor="favicon-upload">
+                      <Button
+                        asChild
+                        variant="outline"
+                        disabled={isLoading}
+                        className="w-full cursor-pointer"
+                      >
+                        <span>
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                          {pendingAssets.favicon_url ? "Ganti Favicon" : "Pilih Favicon"}
+                        </span>
+                      </Button>
+                    </label>
                     <input
                       id="favicon-upload"
                       type="file"
@@ -817,17 +951,26 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                   </div>
                 </div>
 
-                {isEditing ? (
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isLoading || Boolean(uploadingAsset)}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Batal
+                  </Button>
                   <Button type="submit" disabled={isLoading} className="font-bold">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Simpan
                   </Button>
-                ) : null}
+                </DialogFooter>
               </form>
             </Form>
-          </div>
-        </TabsContent>
-      </Tabs>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

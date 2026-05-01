@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { FilterChipRail } from "@/components/ui/filter-chip-rail";
 import {
   SERVICES,
   SERVICE_CATEGORIES,
@@ -11,6 +12,17 @@ import {
 } from "@/lib/data";
 
 type FilterValue = "Semua" | ServiceCategory;
+
+function getServiceMobileLabel(category: FilterValue) {
+  switch (category) {
+    case "Perlindungan Konsumen":
+      return "Konsumen";
+    case "Konsultasi Usaha":
+      return "Usaha";
+    default:
+      return category;
+  }
+}
 
 export default function LayananClient() {
   const [activeFilter, setActiveFilter] = useState<FilterValue>("Semua");
@@ -22,7 +34,7 @@ export default function LayananClient() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="relative overflow-hidden bg-background pb-24 pt-40 md:pb-32 md:pt-48">
+      <section className="relative overflow-hidden bg-background pb-14 pt-32 md:pb-20 md:pt-40">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay"
           style={{
@@ -38,7 +50,7 @@ export default function LayananClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             aria-label="Breadcrumb"
-            className="mb-10 flex items-center gap-2 text-sm text-muted-foreground"
+            className="mb-6 flex items-center gap-2 text-sm text-muted-foreground md:mb-8"
           >
             <Link href="/" className="transition-colors hover:text-primary">
               Beranda
@@ -51,48 +63,36 @@ export default function LayananClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="max-w-4xl"
+            className="max-w-3xl"
           >
-            <span className="mb-6 block text-sm font-medium uppercase tracking-[0.2em] text-primary">
-              Layanan Kami
-            </span>
-            <h1 className="mb-8 font-serif text-5xl font-bold leading-[1.05] text-foreground md:text-7xl lg:text-8xl">
+            <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-6xl">
               Bidang Layanan Hukum
             </h1>
-            <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-              Kami menyediakan pendampingan hukum menyeluruh dari litigasi perdata hingga perlindungan
-              konsumen dengan analisa tajam dan strategi yang terukur untuk setiap perkara.
-            </p>
           </motion.div>
         </div>
       </section>
 
-      <section className="border-t border-border bg-background py-20 md:py-28">
+      <section className="border-t border-border bg-background py-16 md:py-20">
         <div className="container mx-auto px-4 md:px-8">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mb-14 flex flex-wrap gap-3 md:mb-20"
+            className="mb-10 md:mb-20"
           >
-            {SERVICE_CATEGORIES.map((category) => {
-              const isActive = activeFilter === category;
-
-              return (
-                <button
-                  key={category}
-                  onClick={() => setActiveFilter(category)}
-                  className={`rounded-full border px-5 py-2.5 text-sm transition-all duration-300 md:text-base ${
-                    isActive
-                      ? "border-primary bg-primary font-medium text-primary-foreground"
-                      : "border-border bg-transparent text-foreground hover:border-primary hover:text-primary"
-                  }`}
-                >
-                  {category}
-                </button>
-              );
-            })}
+            <FilterChipRail
+              options={SERVICE_CATEGORIES.map((category) => ({
+                value: category,
+                label: category,
+                mobileLabel: getServiceMobileLabel(category),
+              }))}
+              activeValue={activeFilter}
+              onChange={(value) => setActiveFilter(value as FilterValue)}
+              buttonClassName="md:px-5 md:py-2.5 md:text-base md:font-medium md:tracking-normal"
+              desktopClassName="md:gap-3"
+              inactiveButtonClassName="md:bg-transparent md:text-foreground md:hover:text-primary"
+            />
           </motion.div>
 
           <AnimatePresence mode="wait">

@@ -28,6 +28,10 @@ function buildWhatsAppHref(service: ServiceRow, whatsappNumber?: string | null) 
   return buildWhatsAppUrl(whatsappNumber, message);
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function LayananDetailClient({
   service,
   relatedServices,
@@ -48,8 +52,18 @@ export function LayananDetailClient({
     return <NotFound />;
   }
 
-  // Get related services (excluding current one, max 3)
-  
+  const shortDescription = service.deskripsi_singkat?.trim() || "";
+  const longDescription = service.deskripsi_lengkap?.trim() || "";
+  const cleanedLongDescription =
+    shortDescription && longDescription
+      ? longDescription
+          .replace(new RegExp(`^${escapeRegExp(shortDescription)}(?:\\s+|\\n+)*`, "i"), "")
+          .trim()
+      : longDescription;
+  const introDescription =
+    cleanedLongDescription.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean)[0] ||
+    shortDescription ||
+    "Layanan ini berfokus pada penyelesaian sengketa hukum dengan pendekatan yang efektif dan strategis. Kami menggabungkan ketajaman analisa dokumen dengan keahlian negosiasi maupun litigasi untuk mencapai hasil terbaik bagi klien.";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -105,10 +119,7 @@ export function LayananDetailClient({
                   Apa Itu {service.nama}?
                 </h2>
                 <div className="prose prose-invert prose-lg max-w-none text-muted-foreground leading-relaxed">
-                  <p>
-                    {service.deskripsi_singkat ||
-                      "Layanan ini berfokus pada penyelesaian sengketa hukum dengan pendekatan yang efektif dan strategis. Kami menggabungkan ketajaman analisa dokumen dengan keahlian negosiasi maupun litigasi untuk mencapai hasil terbaik bagi klien."}
-                  </p>
+                  <p>{introDescription}</p>
                   <p>
                     Tim profesional kami akan mendampingi Anda di setiap tahap
                     proses hukum, mulai dari konsultasi awal, pengumpulan dan

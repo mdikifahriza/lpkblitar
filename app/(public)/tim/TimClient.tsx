@@ -12,6 +12,7 @@ import {
   Megaphone,
   Check,
 } from "lucide-react";
+import { FilterChipRail } from "@/components/ui/filter-chip-rail";
 
 const DIVISION_ICONS = {
   scale: Scale,
@@ -63,6 +64,37 @@ const DIVISIONS = [
   }
 ];
 
+function getMobileDivisionLabel(label: string) {
+  if (label === "Semua") {
+    return label;
+  }
+
+  const normalizedLabel = label.toLowerCase();
+
+  if (normalizedLabel.includes("non-litigasi")) {
+    return "Non-Litigasi";
+  }
+
+  if (normalizedLabel.includes("litigasi")) {
+    return "Litigasi";
+  }
+
+  if (normalizedLabel.includes("dokumen")) {
+    return "Dokumen";
+  }
+
+  if (normalizedLabel.includes("instansi")) {
+    return "Instansi";
+  }
+
+  if (normalizedLabel.includes("negosiasi")) {
+    return "Negosiasi";
+  }
+
+  const shortLabel = label.split("&")[0]?.trim();
+  return shortLabel || label;
+}
+
 interface TeamMember {
   id: string;
   nama: string;
@@ -93,7 +125,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
   return (
     <>
       {/* Page Header */}
-      <section className="relative pt-36 pb-16 md:pt-44 md:pb-24 overflow-hidden bg-background">
+      <section className="relative overflow-hidden bg-background pb-14 pt-32 md:pb-20 md:pt-40">
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay"
           style={{
@@ -109,7 +141,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             aria-label="Breadcrumb"
-            className="mb-10 flex items-center gap-2 text-sm text-muted-foreground"
+            className="mb-6 flex items-center gap-2 text-sm text-muted-foreground md:mb-8"
           >
             <Link href="/" className="hover:text-primary transition-colors">
               Beranda
@@ -122,20 +154,11 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="max-w-4xl"
+            className="max-w-3xl"
           >
-            <span className="text-primary uppercase tracking-[0.18em] text-xs font-medium mb-6 block">
-              Tim Kami
-            </span>
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground font-bold leading-[1.05] mb-8">
+            <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-6xl">
               Tim Profesional Kami
             </h1>
-            <p className="text-muted-foreground text-lg md:text-xl leading-relaxed max-w-3xl">
-              Setiap perkara membutuhkan ketelitian, ketegasan, dan integritas.
-              Kami membangun tim lintas disiplin yang memadukan ketajaman analisa,
-              pengalaman praktik di pengadilan, serta empati pada situasi setiap
-              klien.
-            </p>
           </motion.div>
         </div>
       </section>
@@ -217,25 +240,23 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 mb-16">
-            {divisionsList.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter as string)}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium uppercase tracking-wider transition-all duration-300 ${
-                  activeFilter === filter
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
+          <div className="mb-12 md:mb-16">
+            <FilterChipRail
+              options={divisionsList.map((filter) => ({
+                value: filter,
+                label: filter,
+                mobileLabel: getMobileDivisionLabel(filter),
+              }))}
+              activeValue={activeFilter}
+              onChange={setActiveFilter}
+              desktopClassName="md:justify-center md:gap-2"
+              buttonClassName="md:px-6 md:py-2.5 md:text-sm md:font-medium md:tracking-wider"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-[1400px] mx-auto min-h-[500px] items-start">
             <AnimatePresence mode="popLayout">
-              {filteredTeam.map((member, idx) => (
+              {filteredTeam.map((member) => (
                 <motion.div
                   key={member.id}
                   layout

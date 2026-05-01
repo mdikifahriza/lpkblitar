@@ -64,7 +64,7 @@ const DEFAULT_SETTINGS: SiteSettingsMap = {
   og_image_default_url: "/images/hero-portrait.png",
   favicon_url: "/favicon.ico",
   google_verification: "",
-  whatsapp_number: "6281234567890",
+  whatsapp_number: "",
   email: "info@hutabaratlawoffice.com",
   alamat: "Jalan Menur RT 003 / RW 007, Desa Kaweron, Kecamatan Talun, Kabupaten Blitar, Jawa Timur",
   jam_operasional: "Senin - Jumat: 08.00 - 17.00 WIB",
@@ -104,10 +104,6 @@ export async function getSiteSettings(): Promise<SiteSettingsMap> {
 
   if (!mapped.email && mapped.organization_email) {
     mapped.email = mapped.organization_email;
-  }
-
-  if (!mapped.whatsapp_number && mapped.organization_phone) {
-    mapped.whatsapp_number = mapped.organization_phone;
   }
 
   if (!mapped.alamat && mapped.organization_street_address) {

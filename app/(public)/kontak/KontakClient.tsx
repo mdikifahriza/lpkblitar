@@ -44,26 +44,19 @@ export function KontakClient({
 
   return (
     <div className="min-h-screen bg-background">
-      <section className="border-b border-border pt-32 pb-14 md:pt-40 md:pb-20">
+      <section className="border-b border-border pb-12 pt-28 md:pb-16 md:pt-36">
         <div className="container mx-auto px-4 md:px-8">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-4xl"
+            className="max-w-3xl"
           >
-            <span className="mb-5 inline-flex items-center rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              Kontak
-            </span>
-            <h1 className="font-serif text-4xl font-bold leading-tight text-foreground md:text-5xl lg:text-6xl">
+            <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-[3.5rem]">
               Hubungi {officeName}
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
-              Konsultasi awal bisa dimulai lewat WhatsApp, formulir, email, atau kunjungan langsung ke kantor. Pilih
-              jalur yang paling nyaman untuk Anda.
-            </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
               <a href={whatsappUrl} target="_blank" rel="noreferrer" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full gap-3 px-7 py-6 text-base font-semibold">
                   <MessageCircle className="h-5 w-5" />

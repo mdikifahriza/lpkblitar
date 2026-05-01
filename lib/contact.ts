@@ -17,7 +17,11 @@ export function normalizeWhatsAppNumber(value?: string | null) {
 }
 
 export function buildWhatsAppUrl(number?: string | null, message?: string | null) {
-  const normalizedNumber = normalizeWhatsAppNumber(number) || "6281234567890";
+  const normalizedNumber = normalizeWhatsAppNumber(number);
+
+  if (!normalizedNumber) {
+    throw new Error("contact_settings.whatsapp_number wajib diisi sebelum tombol WhatsApp digunakan.");
+  }
 
   if (!message) {
     return `https://wa.me/${normalizedNumber}`;

@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Panel Admin" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Masuk untuk mengelola website Hutabarat Law
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - text: Email / Username
+          - generic [ref=e10]:
+            - generic:
+              - img
+            - textbox "admin@contoh.com / adminhari" [ref=e11]
+        - generic [ref=e12]:
+          - text: Kata Sandi
+          - generic [ref=e13]:
+            - generic:
+              - img
+            - textbox "••••••••" [ref=e14]
+            - button [ref=e15]:
+              - img [ref=e16]
+        - button "Masuk" [ref=e19]
+    - link "← Kembali ke Beranda" [ref=e21] [cursor=pointer]:
+      - /url: /
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]:
+    - img [ref=e28]

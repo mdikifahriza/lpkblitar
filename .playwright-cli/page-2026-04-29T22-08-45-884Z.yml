@@ -1,0 +1,177 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "Logo" [ref=e5] [cursor=pointer]:
+        - /url: /admin/login
+        - img "Logo" [ref=e6]
+      - generic [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "Beranda" [ref=e10] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e11]:
+            - link "Layanan" [ref=e12] [cursor=pointer]:
+              - /url: /layanan
+          - listitem [ref=e13]:
+            - link "Tim" [ref=e14] [cursor=pointer]:
+              - /url: /tim
+          - listitem [ref=e15]:
+            - link "Insight" [ref=e16] [cursor=pointer]:
+              - /url: /artikel
+          - listitem [ref=e17]:
+            - link "Kontak" [ref=e18] [cursor=pointer]:
+              - /url: /kontak
+          - listitem [ref=e19]:
+            - link "Daftar Konsultasi" [ref=e20] [cursor=pointer]:
+              - /url: /daftar-konsultasi
+        - link "Konsultasi Sekarang" [ref=e21] [cursor=pointer]:
+          - /url: /konsultasi
+          - button "Konsultasi Sekarang" [ref=e22]
+        - button "Tunggu sebentar..." [ref=e23]:
+          - generic [ref=e24]: Tunggu sebentar...
+  - main [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: Kontak
+        - heading "Hubungi Kantor Konsultan Hukum Hari Mulana Hutabarat, S.H., CPLA" [level=1] [ref=e31]
+        - paragraph [ref=e32]: Konsultasi awal bisa dimulai lewat WhatsApp, formulir, email, atau kunjungan langsung ke kantor. Pilih jalur yang paling nyaman untuk Anda.
+        - generic [ref=e33]:
+          - link "Chat WhatsApp" [ref=e34] [cursor=pointer]:
+            - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+            - button "Chat WhatsApp" [ref=e35]:
+              - img
+              - text: Chat WhatsApp
+          - link "Isi Form Konsultasi" [ref=e36] [cursor=pointer]:
+            - /url: /konsultasi
+            - button "Isi Form Konsultasi" [ref=e37]:
+              - img
+              - text: Isi Form Konsultasi
+          - link "Telepon Kantor" [ref=e38] [cursor=pointer]:
+            - /url: tel:0342123456
+            - button "Telepon Kantor" [ref=e39]:
+              - img
+              - text: Telepon Kantor
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - heading "Jalur Kontak" [level=2] [ref=e44]
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - img [ref=e48]
+                - generic [ref=e50]:
+                  - generic [ref=e51]: WhatsApp
+                  - link "6281234567890" [ref=e52] [cursor=pointer]:
+                    - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+              - generic [ref=e53]:
+                - img [ref=e55]
+                - generic [ref=e59]:
+                  - generic [ref=e60]: Telepon
+                  - link "(0342) 123456" [ref=e61] [cursor=pointer]:
+                    - /url: tel:0342123456
+              - generic [ref=e62]:
+                - img [ref=e64]
+                - generic [ref=e67]:
+                  - generic [ref=e68]: Email
+                  - link "info@hutabaratlawoffice.com" [ref=e69] [cursor=pointer]:
+                    - /url: mailto:info@hutabaratlawoffice.com
+              - generic [ref=e70]:
+                - img [ref=e72]
+                - generic [ref=e76]:
+                  - generic [ref=e77]: Alamat Kantor
+                  - generic [ref=e78]: Jalan Menur RT 003 / RW 007, Desa Kaweron, Kecamatan Talun, Kabupaten Blitar, Jawa Timur
+                  - link "Buka peta" [ref=e79] [cursor=pointer]:
+                    - /url: https://www.google.com/maps/search/?api=1&query=Jalan%20Menur%20RT%20003%20%2F%20RW%20007%2C%20Desa%20Kaweron%2C%20Kecamatan%20Talun%2C%20Kabupaten%20Blitar%2C%20Jawa%20Timur
+                    - text: Buka peta
+                    - img [ref=e80]
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - img [ref=e86]
+              - heading "Jam Kerja" [level=2] [ref=e89]
+            - paragraph [ref=e90]: "Senin - Jumat: 08.00 - 17.00 WIB"
+            - generic [ref=e91]:
+              - heading "Media Sosial" [level=3] [ref=e92]
+              - paragraph [ref=e93]: Belum ada link media sosial yang ditampilkan.
+        - iframe [ref=e95]:
+          
+  - generic [ref=e98]:
+    - generic [ref=e99]:
+      - text: Siap Menyelesaikan
+      - text: Masalah Hukum Anda?
+    - paragraph [ref=e100]: Jangan tunda hingga masalah semakin rumit. Dapatkan analisa tajam dan strategi penyelesaian efektif dari tim profesional kami.
+    - generic [ref=e101]:
+      - link "Konsultasi via WhatsApp" [ref=e102] [cursor=pointer]:
+        - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+        - button "Konsultasi via WhatsApp" [ref=e103]:
+          - img
+          - text: Konsultasi via WhatsApp
+      - link "Isi Form Konsultasi" [ref=e104] [cursor=pointer]:
+        - /url: /konsultasi
+        - button "Isi Form Konsultasi" [ref=e105]:
+          - img
+          - text: Isi Form Konsultasi
+  - contentinfo [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]:
+          - link "Kantor LAW" [ref=e110] [cursor=pointer]:
+            - /url: /
+          - paragraph [ref=e111]: Kantor konsultan hukum di Blitar yang berfokus pada sengketa finance, perlindungan konsumen, mediasi bisnis, dan pengembangan usaha.
+        - generic [ref=e112]:
+          - heading "Menu Navigasi" [level=4] [ref=e113]
+          - list [ref=e114]:
+            - listitem [ref=e115]:
+              - link "Beranda" [ref=e116] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e117]:
+              - link "Layanan Kami" [ref=e118] [cursor=pointer]:
+                - /url: /layanan
+            - listitem [ref=e119]:
+              - link "Tim Profesional" [ref=e120] [cursor=pointer]:
+                - /url: /tim
+            - listitem [ref=e121]:
+              - link "Insight Hukum" [ref=e122] [cursor=pointer]:
+                - /url: /artikel
+            - listitem [ref=e123]:
+              - link "Kontak" [ref=e124] [cursor=pointer]:
+                - /url: /kontak
+            - listitem [ref=e125]:
+              - link "Daftar Konsultasi" [ref=e126] [cursor=pointer]:
+                - /url: /daftar-konsultasi
+            - listitem [ref=e127]:
+              - link "Konsultasi" [ref=e128] [cursor=pointer]:
+                - /url: /konsultasi
+        - generic [ref=e129]:
+          - heading "Fokus Layanan" [level=4] [ref=e130]
+          - list [ref=e131]:
+            - listitem [ref=e132]: Sengketa Finance & Perbankan
+            - listitem [ref=e133]: Perlindungan Konsumen
+            - listitem [ref=e134]: Gugatan Perdata
+            - listitem [ref=e135]: Analisa Lelang & Cessie
+            - listitem [ref=e136]: Mediasi & Negosiasi Bisnis
+        - generic [ref=e137]:
+          - heading "Hubungi Kami" [level=4] [ref=e138]
+          - list [ref=e139]:
+            - listitem [ref=e140]:
+              - img [ref=e141]
+              - generic [ref=e144]: Jalan Menur RT 003 / RW 007, Desa Kaweron, Kecamatan Talun, Kabupaten Blitar, Jawa Timur
+            - listitem [ref=e145]:
+              - img [ref=e146]
+              - generic [ref=e148]: (0342) 123456
+            - listitem [ref=e149]:
+              - img [ref=e150]
+              - generic [ref=e153]: info@hutabaratlawoffice.com
+            - listitem [ref=e154]:
+              - img [ref=e155]
+              - generic [ref=e158]: "Senin - Jumat: 08.00 - 17.00 WIB"
+      - generic [ref=e159]:
+        - paragraph [ref=e160]: © 2026 Kantor Konsultan Hukum Hari Mulana Hutabarat, S.H., CPLA. Hak Cipta Dilindungi.
+        - generic [ref=e161]:
+          - link "Kebijakan Privasi" [ref=e162] [cursor=pointer]:
+            - /url: /privacy
+          - link "Syarat & Ketentuan" [ref=e163] [cursor=pointer]:
+            - /url: /terms
+  - link "Chat WhatsApp":
+    - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+    - img
+  - button "Open Next.js Dev Tools" [ref=e169] [cursor=pointer]:
+    - img [ref=e170]

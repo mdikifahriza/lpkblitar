@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { Plus, Search, Edit, Trash2, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import { flushSync } from "react-dom";
+import { Plus, Search, Edit, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +23,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -30,27 +30,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { upsertService, deleteService, toggleServiceStatus, deleteAllServices } from "./actions";
+import { insertService, updateService, deleteService, toggleServiceStatus, deleteAllServices } from "./actions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import type { ServiceRow } from "@/lib/api/services";
 
-export function ServicesClient({ initialServices, userRole }: { initialServices: any[], userRole: string }) {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
-  
-  const [formData, setFormData] = useState<any>({
+type EditableServiceForm = Omit<ServiceRow, "id" | "nomor_urut" | "aktif"> & {
+  id: string | null;
+  nomor_urut: number;
+  aktif: boolean;
+};
+
+function createDefaultServiceForm(nextOrder = 1): EditableServiceForm {
+  return {
     id: null,
     nama: "",
     slug: "",
     kategori: "litigasi",
     deskripsi_singkat: "",
     deskripsi_lengkap: "",
-    nomor_urut: 1,
-    aktif: true
-  });
+    nomor_urut: nextOrder,
+    aktif: true,
+  };
+}
+
+export function ServicesClient({
+  initialServices,
+  userRole,
+}: {
+  initialServices: ServiceRow[];
+  userRole: string;
+}) {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, startRefreshTransition] = useTransition();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  
+  const [formData, setFormData] = useState<EditableServiceForm>(createDefaultServiceForm());
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -59,22 +77,27 @@ export function ServicesClient({ initialServices, userRole }: { initialServices:
     srv.slug?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const resetForm = () => {
+    setFormData(createDefaultServiceForm(initialServices.length + 1));
+  };
+
+  const closeServiceDialog = () => {
+    setIsDialogOpen(false);
+    resetForm();
+  };
+
   const handleAdd = () => {
-    setFormData({
-      id: null,
-      nama: "",
-      slug: "",
-      kategori: "litigasi",
-      deskripsi_singkat: "",
-      deskripsi_lengkap: "",
-      nomor_urut: initialServices.length + 1,
-      aktif: true
-    });
+    resetForm();
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (service: any) => {
-    setFormData({ ...service });
+  const handleEdit = (service: ServiceRow) => {
+    setFormData({
+      ...service,
+      id: service.id,
+      nomor_urut: service.nomor_urut ?? 0,
+      aktif: service.aktif ?? true,
+    });
     setIsDialogOpen(true);
   };
 
@@ -85,13 +108,20 @@ export function ServicesClient({ initialServices, userRole }: { initialServices:
 
   const onSubmit = async () => {
     setIsLoading(true);
-    const { error } = await upsertService(formData);
+    const payload = { ...formData };
+    const { error } = payload.id ? await updateService(payload) : await insertService(payload);
     if (error) {
       toast.error(error);
     } else {
-      toast.success(formData.id ? "Layanan diperbarui" : "Layanan ditambahkan");
-      setIsDialogOpen(false);
-      router.refresh();
+      toast.success(payload.id ? "Layanan diperbarui" : "Layanan ditambahkan");
+      setIsLoading(false);
+      flushSync(() => {
+        closeServiceDialog();
+      });
+      startRefreshTransition(() => {
+        router.refresh();
+      });
+      return;
     }
     setIsLoading(false);
   };
@@ -202,8 +232,8 @@ export function ServicesClient({ initialServices, userRole }: { initialServices:
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Switch
-                          checked={srv.aktif}
-                          onCheckedChange={() => onToggleStatus(srv.id, srv.aktif)}
+                          checked={Boolean(srv.aktif)}
+                          onCheckedChange={() => onToggleStatus(srv.id, Boolean(srv.aktif))}
                           className="data-[state=checked]:bg-primary"
                         />
                         <span className="text-sm text-muted-foreground">
@@ -318,7 +348,19 @@ export function ServicesClient({ initialServices, userRole }: { initialServices:
       </div>
 
       {/* Dialog Form */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsDialogOpen(true);
+            return;
+          }
+
+          if (!isLoading) {
+            closeServiceDialog();
+          }
+        }}
+      >
         <DialogContent className="bg-card border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl text-primary">
@@ -382,9 +424,9 @@ export function ServicesClient({ initialServices, userRole }: { initialServices:
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">Batal</Button>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground" disabled={isLoading || isRefreshing}>Batal</Button>
             </DialogClose>
-            <Button onClick={onSubmit} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+            <Button onClick={onSubmit} disabled={isLoading || isRefreshing} className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Simpan
             </Button>
           </DialogFooter>

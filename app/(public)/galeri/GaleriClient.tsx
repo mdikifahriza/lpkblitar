@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, ChevronRight, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { FilterChipRail } from "@/components/ui/filter-chip-rail";
 import { MediaPreview } from "@/components/ui/media-preview";
 import {
   GALLERY_CATEGORY_OPTIONS,
@@ -40,9 +41,9 @@ export function GaleriClient({
 
   return (
     <>
-      <section className="border-b border-border bg-background pt-32 pb-16 md:pt-40 md:pb-24">
+      <section className="border-b border-border bg-background pb-14 pt-28 md:pb-20 md:pt-36">
         <div className="container mx-auto px-4 md:px-8">
-          <nav aria-label="Breadcrumb" className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
+          <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-sm text-muted-foreground md:mb-8">
             <Link href="/" className="transition-colors hover:text-primary">
               Beranda
             </Link>
@@ -50,40 +51,10 @@ export function GaleriClient({
             <span className="text-foreground">Galeri</span>
           </nav>
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:items-end">
-            <div className="max-w-3xl">
-              <span className="mb-4 inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Dokumentasi Publik
-              </span>
-              <h1 className="font-serif text-4xl font-bold leading-tight text-foreground md:text-6xl">
-                Galeri Kegiatan, Edukasi, dan Jejak Profesional
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                Kumpulan dokumentasi kegiatan kantor, edukasi hukum, media, serta momen penting yang memperlihatkan cara
-                kerja dan kehadiran kami di lapangan.
-              </p>
-            </div>
-
-            <div className="rounded-[28px] border border-border bg-card p-6 shadow-sm">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Album Publik</p>
-                  <h2 className="mt-2 text-3xl font-semibold text-foreground">{initialGalleries.length}</h2>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Foto</p>
-                  <h2 className="mt-2 text-3xl font-semibold text-foreground">
-                    {initialGalleries.reduce((count, gallery) => count + gallery.gallery_items.length, 0)}
-                  </h2>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Kategori Aktif</p>
-                  <h2 className="mt-2 text-3xl font-semibold text-foreground">
-                    {new Set(initialGalleries.map((gallery) => gallery.kategori)).size}
-                  </h2>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-3xl">
+            <h1 className="font-serif text-3xl font-bold leading-[1.08] text-foreground md:text-5xl lg:text-6xl">
+              Galeri Kegiatan, Edukasi, dan Jejak Profesional
+            </h1>
           </div>
         </div>
       </section>
@@ -98,22 +69,16 @@ export function GaleriClient({
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {categoryOptions.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  className={
-                    activeCategory === category
-                      ? "rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary-foreground"
-                      : "rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                  }
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+            <FilterChipRail
+              options={categoryOptions.map((category) => ({
+                value: category,
+                label: category,
+              }))}
+              activeValue={activeCategory}
+              onChange={setActiveCategory}
+              desktopClassName="md:gap-2"
+              buttonClassName="md:px-4 md:py-2 md:text-xs md:font-semibold md:tracking-[0.14em]"
+            />
           </div>
 
           {!tableReady || filteredGalleries.length === 0 ? (

@@ -37,7 +37,10 @@ export function NavbarClient({ settings }: NavbarClientProps) {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-background border-b border-border shadow-sm">
+    <nav
+      className="fixed top-0 left-0 w-full z-50 border-b border-border shadow-sm"
+      style={{ backgroundColor: "#ffffff" }}
+    >
       <div className="container mx-auto px-4 md:px-8 relative z-50 py-4">
         <div className="flex items-center justify-between">
           <Link href="/admin/login" className="flex flex-col z-50" onClick={() => setIsMobileMenuOpen(false)}>
@@ -89,9 +92,10 @@ export function NavbarClient({ settings }: NavbarClientProps) {
       </div>
 
       <div
-        className={`fixed inset-0 bg-background z-40 transition-transform duration-300 ease-in-out flex flex-col justify-center items-center ${
+        className={`fixed inset-0 z-40 transition-transform duration-300 ease-in-out flex flex-col justify-center items-center ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         } md:hidden`}
+        style={{ backgroundColor: "#ffffff" }}
       >
         <ul className="flex flex-col items-center gap-8 mb-12">
           {navLinks.map((link) => (

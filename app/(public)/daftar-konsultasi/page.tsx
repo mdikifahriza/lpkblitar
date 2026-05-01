@@ -91,7 +91,7 @@ export default async function DaftarKonsultasiPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <section className="relative overflow-hidden bg-background pb-16 pt-36 md:pb-24 md:pt-44">
+      <section className="relative overflow-hidden bg-background pb-14 pt-32 md:pb-20 md:pt-40">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay"
           style={{
@@ -102,16 +102,9 @@ export default async function DaftarKonsultasiPage() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-primary opacity-[0.05] blur-[120px]" />
 
         <div className="container relative z-10 mx-auto px-4 text-center md:px-8">
-          <span className="mb-6 block text-xs font-medium uppercase tracking-[0.18em] text-primary">
-            Transparansi Layanan
-          </span>
-          <h1 className="mb-8 font-serif text-4xl font-bold leading-[1.05] text-foreground md:text-5xl lg:text-6xl">
+          <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-[3.5rem]">
             Daftar Antrean Konsultasi
           </h1>
-          <p className="mx-auto max-w-3xl text-lg leading-relaxed text-muted-foreground">
-            Pantau status antrean pesan dan konsultasi hukum klien kami secara transparan. Identitas
-            pelapor disamarkan untuk menjaga kerahasiaan.
-          </p>
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ChevronRight, Clock, Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FilterChipRail } from "@/components/ui/filter-chip-rail";
 
 const PAGE_SIZE = 6;
 
@@ -54,7 +55,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
   return (
     <>
       {/* Page Header */}
-      <section className="relative pt-36 pb-16 md:pt-44 md:pb-24 overflow-hidden bg-background">
+      <section className="relative overflow-hidden bg-background pb-14 pt-32 md:pb-20 md:pt-40">
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay"
           style={{
@@ -70,7 +71,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             aria-label="Breadcrumb"
-            className="mb-10 flex items-center gap-2 text-sm text-muted-foreground"
+            className="mb-6 flex items-center gap-2 text-sm text-muted-foreground md:mb-8"
           >
             <Link href="/" className="hover:text-primary transition-colors">
               Beranda
@@ -83,19 +84,11 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="max-w-4xl"
+            className="max-w-3xl"
           >
-            <span className="text-primary uppercase tracking-[0.18em] text-xs font-medium mb-6 block">
-              Publikasi & Analisa
-            </span>
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground font-bold leading-[1.05] mb-8">
+            <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-6xl">
               Insight Hukum Terkini
             </h1>
-            <p className="text-muted-foreground text-lg md:text-xl leading-relaxed max-w-3xl">
-              Artikel edukatif dan tajam seputar sengketa finance, perbankan,
-              perlindungan konsumen, dan manajemen risiko legal untuk pelaku
-              usaha di Indonesia.
-            </p>
           </motion.div>
         </div>
       </section>
@@ -184,21 +177,17 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
               </h2>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              {categories.map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => handleFilterChange(filter)}
-                  className={`px-5 py-2.5 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 ${
-                    activeFilter === filter
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary"
-                  }`}
-                >
-                  {filter.replace("-", " ")}
-                </button>
-              ))}
-            </div>
+            <FilterChipRail
+              options={categories.map((filter) => ({
+                value: filter,
+                label: filter.replace("-", " "),
+              }))}
+              activeValue={activeFilter}
+              onChange={handleFilterChange}
+              className="lg:max-w-[48rem]"
+              desktopClassName="md:gap-2 lg:justify-end"
+              buttonClassName="md:px-5 md:py-2.5 md:text-xs md:font-medium md:tracking-wider"
+            />
           </div>
 
           {filteredArticles.length === 0 ? (
@@ -211,7 +200,7 @@ export function ArtikelClient({ initialArticles }: { initialArticles: Article[] 
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 min-h-[400px]">
                 <AnimatePresence mode="popLayout">
-                  {visibleArticles.map((article, idx) => (
+                  {visibleArticles.map((article) => (
                     <motion.div
                       key={article.id}
                       layout

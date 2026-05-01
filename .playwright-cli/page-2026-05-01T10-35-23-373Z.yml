@@ -1,0 +1,237 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "Logo" [ref=e5] [cursor=pointer]:
+        - /url: /admin/login
+        - img "Logo" [ref=e6]
+      - generic [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "Beranda" [ref=e10] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e11]:
+            - link "Layanan" [ref=e12] [cursor=pointer]:
+              - /url: /layanan
+          - listitem [ref=e13]:
+            - link "Galeri" [ref=e14] [cursor=pointer]:
+              - /url: /galeri
+          - listitem [ref=e15]:
+            - link "Tim" [ref=e16] [cursor=pointer]:
+              - /url: /tim
+          - listitem [ref=e17]:
+            - link "Insight" [ref=e18] [cursor=pointer]:
+              - /url: /artikel
+          - listitem [ref=e19]:
+            - link "Kontak" [ref=e20] [cursor=pointer]:
+              - /url: /kontak
+          - listitem [ref=e21]:
+            - link "Daftar Konsultasi" [ref=e22] [cursor=pointer]:
+              - /url: /daftar-konsultasi
+        - link "Konsultasi Sekarang" [ref=e23] [cursor=pointer]:
+          - /url: /konsultasi
+          - button "Konsultasi Sekarang" [ref=e24]
+        - button "Tunggu sebentar..." [ref=e25]:
+          - generic [ref=e26]: Tunggu sebentar...
+  - main [ref=e27]:
+    - generic [ref=e29]:
+      - link "Kembali ke galeri" [ref=e30] [cursor=pointer]:
+        - /url: /galeri
+        - img [ref=e31]
+        - text: Kembali ke galeri
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Kegiatan Kantor
+          - generic [ref=e36]: 7 foto
+        - heading "Dokumentasi" [level=1] [ref=e37]
+        - paragraph [ref=e38]: Dokumentasi kegiatan LPK Blitar
+    - img "Dokumentasi" [ref=e42]
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - heading "Dokumentasi Album" [level=2] [ref=e48]
+          - paragraph [ref=e49]: Geser untuk meninjau tiap foto. Sorot atau ketuk slide untuk membuka preview penuh.
+        - generic [ref=e50]:
+          - generic [ref=e51]: "1"
+          - generic [ref=e52]: /
+          - generic [ref=e53]: "7"
+      - region [ref=e54]:
+        - generic [ref=e56]:
+          - group [ref=e57]:
+            - button "foto bersama Foto 1 foto bersama foto bersama Buka Preview" [ref=e58]:
+              - generic [ref=e59]:
+                - img "foto bersama" [ref=e60]
+                - generic [ref=e62]: Foto 1
+                - generic [ref=e64]:
+                  - generic [ref=e65]:
+                    - heading "foto bersama" [level=3] [ref=e66]
+                    - paragraph [ref=e67]: foto bersama
+                  - generic [ref=e68]:
+                    - text: Buka Preview
+                    - img [ref=e69]
+          - group [ref=e74]:
+            - button "menangani kasus di jakarta selatan Foto 2 menangani kasus di jakarta selatan menangani kasus di jakarta selatan Buka Preview" [ref=e75]:
+              - generic [ref=e76]:
+                - img "menangani kasus di jakarta selatan" [ref=e77]
+                - generic [ref=e79]: Foto 2
+                - generic [ref=e81]:
+                  - generic [ref=e82]:
+                    - heading "menangani kasus di jakarta selatan" [level=3] [ref=e83]
+                    - paragraph [ref=e84]: menangani kasus di jakarta selatan
+                  - generic [ref=e85]:
+                    - text: Buka Preview
+                    - img [ref=e86]
+          - group [ref=e91]:
+            - button "mencermati dokumen Foto 3 mencermati dokumen mencermati dokumen Buka Preview" [ref=e92]:
+              - generic [ref=e93]:
+                - img "mencermati dokumen" [ref=e94]
+                - generic [ref=e96]: Foto 3
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - heading "mencermati dokumen" [level=3] [ref=e100]
+                    - paragraph [ref=e101]: mencermati dokumen
+                  - generic [ref=e102]:
+                    - text: Buka Preview
+                    - img [ref=e103]
+          - group [ref=e108]:
+            - button "menunggi antrian panggilan Foto 4 menunggi antrian panggilan menunggi antrian panggilan Buka Preview" [ref=e109]:
+              - generic [ref=e110]:
+                - img "menunggi antrian panggilan" [ref=e111]
+                - generic [ref=e113]: Foto 4
+                - generic [ref=e115]:
+                  - generic [ref=e116]:
+                    - heading "menunggi antrian panggilan" [level=3] [ref=e117]
+                    - paragraph [ref=e118]: menunggi antrian panggilan
+                  - generic [ref=e119]:
+                    - text: Buka Preview
+                    - img [ref=e120]
+          - group [ref=e125]:
+            - button "menunggu di ruang sidang Foto 5 menunggu di ruang sidang menunggu di ruang sidang Buka Preview" [ref=e126]:
+              - generic [ref=e127]:
+                - img "menunggu di ruang sidang" [ref=e128]
+                - generic [ref=e130]: Foto 5
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - heading "menunggu di ruang sidang" [level=3] [ref=e134]
+                    - paragraph [ref=e135]: menunggu di ruang sidang
+                  - generic [ref=e136]:
+                    - text: Buka Preview
+                    - img [ref=e137]
+          - group [ref=e142]:
+            - button "ngopi santai Foto 6 ngopi santai ngopi santai Buka Preview" [ref=e143]:
+              - generic [ref=e144]:
+                - img "ngopi santai" [ref=e145]
+                - generic [ref=e147]: Foto 6
+                - generic [ref=e149]:
+                  - generic [ref=e150]:
+                    - heading "ngopi santai" [level=3] [ref=e151]
+                    - paragraph [ref=e152]: ngopi santai
+                  - generic [ref=e153]:
+                    - text: Buka Preview
+                    - img [ref=e154]
+          - group [ref=e159]:
+            - button "penandatanganan dokumen Foto 7 penandatanganan dokumen penandatanganan dokumen Buka Preview" [ref=e160]:
+              - generic [ref=e161]:
+                - img "penandatanganan dokumen" [ref=e162]
+                - generic [ref=e164]: Foto 7
+                - generic [ref=e166]:
+                  - generic [ref=e167]:
+                    - heading "penandatanganan dokumen" [level=3] [ref=e168]
+                    - paragraph [ref=e169]: penandatanganan dokumen
+                  - generic [ref=e170]:
+                    - text: Buka Preview
+                    - img [ref=e171]
+        - button "Foto sebelumnya" [ref=e176]:
+          - img [ref=e177]
+        - button "Foto berikutnya" [ref=e179]:
+          - img [ref=e180]
+      - generic [ref=e182]:
+        - button "Pilih foto 1" [ref=e183]:
+          - img "foto bersama" [ref=e184]
+        - button "Pilih foto 2" [ref=e185]:
+          - img "menangani kasus di jakarta selatan" [ref=e186]
+        - button "Pilih foto 3" [ref=e187]:
+          - img "mencermati dokumen" [ref=e188]
+        - button "Pilih foto 4" [ref=e189]:
+          - img "menunggi antrian panggilan" [ref=e190]
+        - button "Pilih foto 5" [ref=e191]:
+          - img "menunggu di ruang sidang" [ref=e192]
+        - button "Pilih foto 6" [ref=e193]:
+          - img "ngopi santai" [ref=e194]
+        - button "Pilih foto 7" [ref=e195]:
+          - img "penandatanganan dokumen" [ref=e196]
+  - generic [ref=e199]:
+    - heading "Analisa Tajam. Tim Kuat. Sengketa Tuntas." [level=2] [ref=e200]
+    - paragraph [ref=e201]: Jangan tunda penyelesaian masalah hukum Anda. Diskusikan bersama tim kami hari ini untuk menemukan strategi penyelesaian yang paling tepat dan efisien.
+    - generic [ref=e202]:
+      - link "Konsultasi via WhatsApp" [ref=e203] [cursor=pointer]:
+        - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+        - button "Konsultasi via WhatsApp" [ref=e204]:
+          - img
+          - text: Konsultasi via WhatsApp
+      - link "Isi Form Konsultasi" [ref=e205] [cursor=pointer]:
+        - /url: /konsultasi
+        - button "Isi Form Konsultasi" [ref=e206]:
+          - img
+          - text: Isi Form Konsultasi
+  - contentinfo [ref=e207]:
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - generic [ref=e210]:
+          - link "Kantor Konsultan Hukum dan LPK Blitar" [ref=e211] [cursor=pointer]:
+            - /url: /
+            - img "Kantor Konsultan Hukum dan LPK Blitar" [ref=e212]
+          - paragraph [ref=e213]: Kantor Konsultan Hukum dan LPK Blitar
+        - generic [ref=e214]:
+          - heading "Menu Navigasi" [level=4] [ref=e215]
+          - list [ref=e216]:
+            - listitem [ref=e217]:
+              - link "Beranda" [ref=e218] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e219]:
+              - link "Layanan Kami" [ref=e220] [cursor=pointer]:
+                - /url: /layanan
+            - listitem [ref=e221]:
+              - link "Galeri" [ref=e222] [cursor=pointer]:
+                - /url: /galeri
+            - listitem [ref=e223]:
+              - link "Tim Profesional" [ref=e224] [cursor=pointer]:
+                - /url: /tim
+            - listitem [ref=e225]:
+              - link "Insight Hukum" [ref=e226] [cursor=pointer]:
+                - /url: /artikel
+            - listitem [ref=e227]:
+              - link "Kontak" [ref=e228] [cursor=pointer]:
+                - /url: /kontak
+            - listitem [ref=e229]:
+              - link "Daftar Konsultasi" [ref=e230] [cursor=pointer]:
+                - /url: /daftar-konsultasi
+            - listitem [ref=e231]:
+              - link "Konsultasi" [ref=e232] [cursor=pointer]:
+                - /url: /konsultasi
+        - generic [ref=e233]:
+          - heading "Hubungi Kami" [level=4] [ref=e234]
+          - list [ref=e235]:
+            - listitem [ref=e236]:
+              - img [ref=e237]
+              - generic [ref=e240]: Jalan Menur RT 003 / RW 007, Desa Kaweron, Kecamatan Talun, Kabupaten Blitar, Jawa Timur
+            - listitem [ref=e241]:
+              - img [ref=e242]
+              - generic [ref=e244]: "6281234567890"
+            - listitem [ref=e245]:
+              - img [ref=e246]
+              - generic [ref=e249]: info@hutabaratlawoffice.com
+            - listitem [ref=e250]:
+              - img [ref=e251]
+              - generic [ref=e254]: "Senin - Jumat: 08.00 - 17.00 WIB"
+      - generic [ref=e255]:
+        - paragraph [ref=e256]: © 2026 Kantor Konsultan Hukum dan LPK Blitar. Hak Cipta Dilindungi.
+        - generic [ref=e257]:
+          - link "Kebijakan Privasi" [ref=e258] [cursor=pointer]:
+            - /url: /privacy
+          - link "Syarat & Ketentuan" [ref=e259] [cursor=pointer]:
+            - /url: /terms
+  - link "Chat WhatsApp":
+    - /url: https://wa.me/6281234567890?text=Halo%20Pak%20Hari%2C%20saya%20ingin%20konsultasi%20mengenai%20masalah%20hukum%20saya.
+    - img
+  - button "Open Next.js Dev Tools" [ref=e265] [cursor=pointer]:
+    - img [ref=e266]

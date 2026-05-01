@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export type ContactSettingsRecord = {
   id: string | null;
@@ -36,7 +36,7 @@ export type SocialPlatformOption = {
 };
 
 const DEFAULT_CONTACT_SETTINGS: Omit<ContactSettingsRecord, "id" | "source" | "tablesReady"> = {
-  whatsapp_number: "6281234567890",
+  whatsapp_number: "",
   whatsapp_message_default: "Halo Pak Hari, saya ingin konsultasi mengenai masalah hukum saya.",
   email: "info@hutabaratlawoffice.com",
   alamat: "Jalan Menur RT 003 / RW 007, Desa Kaweron, Kecamatan Talun, Kabupaten Blitar, Jawa Timur",
@@ -132,7 +132,7 @@ const LEGACY_SOCIAL_KEYS = [
 ] as const;
 
 async function getLegacySiteSettingsMap() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.from("site_settings").select("key, value");
 
   if (error) {
@@ -150,8 +150,7 @@ async function getLegacySiteSettingsMap() {
 function mapLegacyContact(settings: Record<string, string>, tablesReady: boolean): ContactSettingsRecord {
   return {
     id: null,
-    whatsapp_number:
-      settings.whatsapp_number || settings.organization_phone || DEFAULT_CONTACT_SETTINGS.whatsapp_number,
+    whatsapp_number: "",
     whatsapp_message_default:
       settings.whatsapp_message_default || DEFAULT_CONTACT_SETTINGS.whatsapp_message_default,
     email: settings.email || DEFAULT_CONTACT_SETTINGS.email,
@@ -189,7 +188,7 @@ function mapLegacySocialLinks(settings: Record<string, string>, includeInactive:
 }
 
 export async function getSocialPlatformOptions() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("social_platforms")
     .select("*")
@@ -215,7 +214,7 @@ export async function getContactData({
 }: {
   includeInactiveSocialLinks?: boolean;
 } = {}) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const legacySettings = await getLegacySiteSettingsMap();
   const legacyContact = mapLegacyContact(legacySettings, false);
   const legacySocialLinks = mapLegacySocialLinks(legacySettings, includeInactiveSocialLinks);
@@ -236,7 +235,7 @@ export async function getContactData({
   const mappedContact: ContactSettingsRecord = contactRow
     ? {
         id: contactRow.id,
-        whatsapp_number: contactRow.whatsapp_number || legacyContact.whatsapp_number,
+        whatsapp_number: contactRow.whatsapp_number || "",
         whatsapp_message_default:
           contactRow.whatsapp_message_default || legacyContact.whatsapp_message_default,
         email: contactRow.email || legacyContact.email,

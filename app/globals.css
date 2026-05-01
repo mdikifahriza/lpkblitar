@@ -246,3 +246,12 @@
 :root .noise-bg::before {
   opacity: 0.04;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

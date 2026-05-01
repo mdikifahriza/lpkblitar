@@ -129,6 +129,18 @@ function createEmptySocialForm(
   };
 }
 
+function createContactFormValues(contact: ContactSettingsRecord) {
+  return {
+    whatsapp_number: contact.whatsapp_number,
+    whatsapp_message_default: contact.whatsapp_message_default,
+    email: contact.email,
+    alamat: contact.alamat,
+    jam_operasional: contact.jam_operasional,
+    maps_embed_url: contact.maps_embed_url,
+    maps_link_url: contact.maps_link_url,
+  };
+}
+
 export function ContactClient({
   initialContact,
   initialSocialLinks,
@@ -141,7 +153,7 @@ export function ContactClient({
   const router = useRouter();
   const [isSavingContact, setIsSavingContact] = useState(false);
   const [isSavingSocial, setIsSavingSocial] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [isSocialDialogOpen, setIsSocialDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isResolvingMapsEmbed, setIsResolvingMapsEmbed] = useState(false);
@@ -152,15 +164,7 @@ export function ContactClient({
 
   const form = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
-      whatsapp_number: initialContact.whatsapp_number,
-      whatsapp_message_default: initialContact.whatsapp_message_default,
-      email: initialContact.email,
-      alamat: initialContact.alamat,
-      jam_operasional: initialContact.jam_operasional,
-      maps_embed_url: initialContact.maps_embed_url,
-      maps_link_url: initialContact.maps_link_url,
-    },
+    defaultValues: createContactFormValues(initialContact),
   });
 
   const platformMap = useMemo(
@@ -168,28 +172,19 @@ export function ContactClient({
     [platformOptions]
   );
   const canManageSocialLinks = initialContact.tablesReady;
-  const contactValues = useWatch({ control: form.control });
-  const mapsEmbedUrl = useWatch({ control: form.control, name: "maps_embed_url" });
-  const mapsLinkUrl = useWatch({ control: form.control, name: "maps_link_url" });
+  const editingMapsEmbedUrl = useWatch({ control: form.control, name: "maps_embed_url" });
+  const editingMapsLinkUrl = useWatch({ control: form.control, name: "maps_link_url" });
   const mapsLinkDirty = Boolean(form.formState.dirtyFields.maps_link_url);
 
   const getPlatformByCode = (code: string) =>
     platformOptions.find((platform) => platform.code === code) ?? null;
 
   useEffect(() => {
-    form.reset({
-      whatsapp_number: initialContact.whatsapp_number,
-      whatsapp_message_default: initialContact.whatsapp_message_default,
-      email: initialContact.email,
-      alamat: initialContact.alamat,
-      jam_operasional: initialContact.jam_operasional,
-      maps_embed_url: initialContact.maps_embed_url,
-      maps_link_url: initialContact.maps_link_url,
-    });
+    form.reset(createContactFormValues(initialContact));
   }, [form, initialContact]);
 
   useEffect(() => {
-    const sourceLink = mapsLinkUrl?.trim() ?? "";
+    const sourceLink = editingMapsLinkUrl?.trim() ?? "";
 
     if (!sourceLink) {
       if (mapsLinkDirty) {
@@ -241,7 +236,17 @@ export function ContactClient({
       abortController.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [form, mapsLinkDirty, mapsLinkUrl]);
+  }, [editingMapsLinkUrl, form, mapsLinkDirty]);
+
+  const openContactDialog = () => {
+    form.reset(createContactFormValues(initialContact));
+    setIsContactDialogOpen(true);
+  };
+
+  const handleCancelEdit = () => {
+    form.reset(createContactFormValues(initialContact));
+    setIsContactDialogOpen(false);
+  };
 
   const handleSaveContact = async (values: z.infer<typeof contactSchema>) => {
     setIsSavingContact(true);
@@ -251,7 +256,7 @@ export function ContactClient({
     if (error) {
       toast.error(error);
     } else {
-      setIsEditing(false);
+      setIsContactDialogOpen(false);
       toast.success("Kontak berhasil disimpan");
       router.refresh();
     }
@@ -259,20 +264,11 @@ export function ContactClient({
     setIsSavingContact(false);
   };
 
-  const handleCancelEdit = () => {
-    form.reset({
-      whatsapp_number: initialContact.whatsapp_number,
-      whatsapp_message_default: initialContact.whatsapp_message_default,
-      email: initialContact.email,
-      alamat: initialContact.alamat,
-      jam_operasional: initialContact.jam_operasional,
-      maps_embed_url: initialContact.maps_embed_url,
-      maps_link_url: initialContact.maps_link_url,
-    });
-    setIsEditing(false);
-  };
-
   const handleAddSocial = () => {
+    if (!canManageSocialLinks) {
+      return;
+    }
+
     const nextOrder =
       initialSocialLinks.length > 0
         ? Math.max(...initialSocialLinks.map((item) => item.nomor_urut || 0)) + 1
@@ -283,6 +279,10 @@ export function ContactClient({
   };
 
   const handleEditSocial = (item: ContactSocialLink) => {
+    if (!canManageSocialLinks) {
+      return;
+    }
+
     const resolvedPlatformId = item.platform_id || getPlatformByCode(item.platform_code)?.id || "";
 
     setSocialFormData({
@@ -337,6 +337,10 @@ export function ContactClient({
   };
 
   const handleToggleSocial = async (id: string, currentValue: boolean) => {
+    if (!canManageSocialLinks) {
+      return;
+    }
+
     const { error } = await toggleContactSocialLinkStatus(id, !currentValue);
 
     if (error) {
@@ -353,25 +357,10 @@ export function ContactClient({
       <AdminPageHeader
         title="Kontak"
         action={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            {isEditing ? (
-              <>
-                <Button variant="outline" onClick={handleCancelEdit} disabled={isSavingContact || isSavingSocial}>
-                  <X className="mr-2 h-4 w-4" />
-                  Batal
-                </Button>
-                <Button onClick={form.handleSubmit(handleSaveContact)} disabled={isSavingContact || isSavingSocial} className="font-bold">
-                  {isSavingContact ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Simpan
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => setIsEditing(true)} className="font-bold">
-                <PencilLine className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            )}
-          </div>
+          <Button onClick={openContactDialog} className="font-bold">
+            <PencilLine className="mr-2 h-4 w-4" />
+            Edit Kontak
+          </Button>
         }
       />
 
@@ -392,153 +381,23 @@ export function ContactClient({
             <h2 className="font-serif text-2xl font-semibold text-foreground">Data Utama</h2>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSaveContact)} className="space-y-6">
-              <div className="grid gap-6">
-                {isEditing ? (
-                  <FormField
-                    control={form.control}
-                    name="whatsapp_number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>WhatsApp Utama</FormLabel>
-                        <FormControl>
-                          <Input placeholder="6281234567890" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <ContactField label="WhatsApp Utama" value={contactValues.whatsapp_number} />
-                )}
-              </div>
-
-              {isEditing ? (
-                <FormField
-                  control={form.control}
-                  name="whatsapp_message_default"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pesan WhatsApp Default</FormLabel>
-                      <FormControl>
-                        <Textarea className="min-h-[96px]" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <ContactField
-                  label="Pesan WhatsApp Default"
-                  value={contactValues.whatsapp_message_default}
-                  multiline
-                />
-              )}
-
-              <div className="grid gap-6 md:grid-cols-2">
-                {isEditing ? (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="info@hutabaratlawoffice.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="jam_operasional"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jam Kerja</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Senin - Jumat: 08.00 - 17.00 WIB" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <ContactField label="Email" value={contactValues.email} />
-                    <ContactField label="Jam Kerja" value={contactValues.jam_operasional} />
-                  </>
-                )}
-              </div>
-
-              {isEditing ? (
-                <FormField
-                  control={form.control}
-                  name="alamat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Alamat</FormLabel>
-                      <FormControl>
-                        <Textarea className="min-h-[120px]" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <ContactField label="Alamat" value={contactValues.alamat} multiline />
-              )}
-
-              <div className="grid gap-6">
-                {isEditing ? (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="maps_link_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Link Google Maps</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://maps.app.goo.gl/..." {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Tempel link Google Maps biasa atau short link `maps.app.goo.gl`. URL embed akan dibuat otomatis.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="maps_embed_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL Embed Maps</FormLabel>
-                          <FormControl>
-                            <Textarea className="min-h-[120px] font-mono text-xs" readOnly {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            {isResolvingMapsEmbed
-                              ? "Sedang membuat URL embed dari link Google Maps..."
-                              : "Field ini dibuat otomatis dari link Google Maps di atas."}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <ContactField label="Link Google Maps" value={contactValues.maps_link_url} multiline />
-                    <ContactField label="URL Embed Maps" value={contactValues.maps_embed_url} multiline />
-                  </>
-                )}
-              </div>
-            </form>
-          </Form>
+          <div className="space-y-6">
+            <ContactField label="WhatsApp Utama" value={initialContact.whatsapp_number} />
+            <ContactField
+              label="Pesan WhatsApp Default"
+              value={initialContact.whatsapp_message_default}
+              multiline
+            />
+            <div className="grid gap-6 md:grid-cols-2">
+              <ContactField label="Email" value={initialContact.email} />
+              <ContactField label="Jam Kerja" value={initialContact.jam_operasional} />
+            </div>
+            <ContactField label="Alamat" value={initialContact.alamat} multiline />
+            <div className="grid gap-6">
+              <ContactField label="Link Google Maps" value={initialContact.maps_link_url} multiline />
+              <ContactField label="URL Embed Maps" value={initialContact.maps_embed_url} multiline />
+            </div>
+          </div>
         </section>
 
         <section className="space-y-6">
@@ -548,10 +407,10 @@ export function ContactClient({
               <h2 className="font-serif text-2xl font-semibold text-foreground">Preview Peta</h2>
             </div>
 
-            {mapsEmbedUrl ? (
+            {initialContact.maps_embed_url ? (
               <div className="overflow-hidden rounded-xl border border-border bg-background">
                 <iframe
-                  src={mapsEmbedUrl}
+                  src={initialContact.maps_embed_url}
                   title="Lokasi kantor"
                   className="h-[320px] w-full"
                   loading="lazy"
@@ -564,9 +423,9 @@ export function ContactClient({
               </div>
             )}
 
-            {mapsLinkUrl ? (
+            {initialContact.maps_link_url ? (
               <a
-                href={mapsLinkUrl}
+                href={initialContact.maps_link_url}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
@@ -582,12 +441,10 @@ export function ContactClient({
       <section className="rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-serif text-2xl font-semibold text-foreground">Link Media Sosial</h2>
-          {isEditing ? (
-            <Button onClick={handleAddSocial} className="font-bold" disabled={!canManageSocialLinks}>
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Link
-            </Button>
-          ) : null}
+          <Button onClick={handleAddSocial} className="font-bold" disabled={!canManageSocialLinks}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Link
+          </Button>
         </div>
 
         <div className="hidden overflow-hidden rounded-xl border border-border md:block">
@@ -636,7 +493,7 @@ export function ContactClient({
                           checked={item.aktif}
                           onCheckedChange={() => handleToggleSocial(item.id, item.aktif)}
                           className="data-[state=checked]:bg-primary"
-                          disabled={!canManageSocialLinks || !isEditing}
+                          disabled={!canManageSocialLinks}
                         />
                         <span className="text-sm text-muted-foreground">
                           {item.aktif ? "Aktif" : "Nonaktif"}
@@ -644,31 +501,29 @@ export function ContactClient({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {isEditing ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditSocial(item)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                            disabled={!canManageSocialLinks}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setDeleteId(item.id);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-                            disabled={!canManageSocialLinks}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : null}
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditSocial(item)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          disabled={!canManageSocialLinks}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeleteId(item.id);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                          disabled={!canManageSocialLinks}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -722,33 +577,31 @@ export function ContactClient({
                   </div>
                 }
                 actions={
-                  isEditing ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditSocial(item)}
-                        className="border-border bg-background text-muted-foreground hover:text-primary"
-                        disabled={!canManageSocialLinks}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setDeleteId(item.id);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                        className="border-border bg-background text-muted-foreground hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
-                        disabled={!canManageSocialLinks}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus
-                      </Button>
-                    </>
-                  ) : undefined
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditSocial(item)}
+                      className="border-border bg-background text-muted-foreground hover:text-primary"
+                      disabled={!canManageSocialLinks}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDeleteId(item.id);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      className="border-border bg-background text-muted-foreground hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
+                      disabled={!canManageSocialLinks}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Hapus
+                    </Button>
+                  </>
                 }
               />
             ))
@@ -756,8 +609,185 @@ export function ContactClient({
         </MobileCardList>
       </section>
 
+      <Dialog open={isContactDialogOpen} onOpenChange={(open) => (open ? setIsContactDialogOpen(true) : handleCancelEdit())}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-foreground">Edit Kontak</DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveContact)} className="space-y-6">
+              <div className="grid gap-6">
+                <FormField
+                  control={form.control}
+                  name="whatsapp_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp Utama</FormLabel>
+                      <FormControl>
+                        <Input placeholder="6281234567890" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="whatsapp_message_default"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pesan WhatsApp Default</FormLabel>
+                    <FormControl>
+                      <Textarea className="min-h-[96px]" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="info@hutabaratlawoffice.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="jam_operasional"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jam Kerja</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Senin - Jumat: 08.00 - 17.00 WIB" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="alamat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Alamat</FormLabel>
+                    <FormControl>
+                      <Textarea className="min-h-[120px]" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="maps_link_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link Google Maps</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://maps.app.goo.gl/..." {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Tempel link Google Maps biasa atau short link `maps.app.goo.gl`. URL embed akan dibuat otomatis.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="maps_embed_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Embed Maps</FormLabel>
+                        <FormControl>
+                          <Textarea className="min-h-[120px] font-mono text-xs" readOnly {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          {isResolvingMapsEmbed
+                            ? "Sedang membuat URL embed dari link Google Maps..."
+                            : "Field ini dibuat otomatis dari link Google Maps di atas."}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
+                  <div className="flex items-center gap-3">
+                    <MapPinned className="h-5 w-5 text-primary" />
+                    <h3 className="font-serif text-xl font-semibold text-foreground">Preview Peta</h3>
+                  </div>
+
+                  {editingMapsEmbedUrl ? (
+                    <div className="overflow-hidden rounded-xl border border-border bg-card">
+                      <iframe
+                        src={editingMapsEmbedUrl}
+                        title="Preview lokasi kantor"
+                        className="h-[280px] w-full"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
+                      URL embed maps belum tersedia
+                    </div>
+                  )}
+
+                  {editingMapsLinkUrl ? (
+                    <a
+                      href={editingMapsLinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                      Buka di Google Maps
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isSavingContact || isSavingSocial}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Batal
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isSavingContact || isSavingSocial} className="font-bold">
+                  {isSavingContact ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Simpan
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isSocialDialogOpen} onOpenChange={setIsSocialDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl text-foreground">
               {socialFormData.id ? "Edit Link Media Sosial" : "Tambah Link Media Sosial"}

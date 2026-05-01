@@ -145,19 +145,11 @@ export function KonsultasiClient({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="pt-36 pb-16 md:pt-44 md:pb-24 border-b border-border">
+      <section className="border-b border-border pb-14 pt-32 md:pb-20 md:pt-40">
         <div className="container mx-auto px-4 md:px-8 text-center max-w-3xl">
-          <span className="text-primary uppercase tracking-[0.2em] text-sm font-medium mb-4 block">
-            Langkah Awal
-          </span>
-          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-foreground font-bold leading-tight mb-6">
+          <h1 className="font-serif text-4xl font-bold leading-[1.02] text-foreground md:text-5xl lg:text-[3.5rem]">
             Mulai Konsultasi Anda
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Ceritakan detail permasalahan hukum yang Anda hadapi. Segala
-            informasi yang Anda berikan dilindungi oleh kerahasiaan
-            profesional pengacara.
-          </p>
         </div>
       </section>
 

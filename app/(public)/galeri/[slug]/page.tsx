@@ -1,5 +1,5 @@
 import NotFound from "@/app/not-found";
-import { getGalleryBySlug, getPublicGalleries } from "@/lib/api/galleries";
+import { getGalleryBySlug } from "@/lib/api/galleries";
 import { GaleriDetailClient } from "./GaleriDetailClient";
 import { generateMetadata as detailMetadata } from "./metadata";
 
@@ -13,8 +13,5 @@ export default async function GaleriDetailPage({ params }: { params: { slug: str
     return <NotFound />;
   }
 
-  const { galleries } = await getPublicGalleries();
-  const relatedGalleries = galleries.filter((item) => item.slug !== slug).slice(0, 3);
-
-  return <GaleriDetailClient gallery={gallery} relatedGalleries={relatedGalleries} />;
+  return <GaleriDetailClient gallery={gallery} />;
 }

@@ -29,10 +29,6 @@ export function HeroClient({ settings, contact }: HeroClientProps) {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="flex flex-col items-start max-w-2xl"
           >
-            <span className="text-primary uppercase tracking-[0.2em] text-xs md:text-sm font-medium mb-6 px-4 py-2 border border-primary/30 rounded-full bg-primary/5">
-              {settings.hero_badge || "Konsultan Hukum & Perlindungan Konsumen"}
-            </span>
-
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-foreground font-bold leading-[1.1] mb-8">
               {settings.hero_heading || "Analisa Tajam. Tim Kuat. Sengketa Tuntas."}
             </h1>

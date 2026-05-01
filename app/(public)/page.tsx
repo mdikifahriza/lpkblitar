@@ -32,16 +32,19 @@ export default async function Home() {
     getFaqs()
   ]);
 
+  const homeServices = services.slice(0, 3);
+  const homeArticles = articles.slice(0, 3);
+
   return (
     <>
       <Hero />
       <TrustBar />
       <ProfilKantor />
-      <Layanan services={services} />
+      <Layanan services={homeServices} />
       <AlurKerja />
       <ProfilTim team={team} />
       <Testimoni testimonials={testimonials} />
-      <Artikel articles={articles} />
+      <Artikel articles={homeArticles} />
       <FAQ faqs={faqs} />
     </>
   );
