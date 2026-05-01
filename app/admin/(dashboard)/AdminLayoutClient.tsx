@@ -122,7 +122,7 @@ export function AdminLayoutClient({
   }, [isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="theme-admin min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen overflow-hidden">
         <aside
           ref={sidebarRef}

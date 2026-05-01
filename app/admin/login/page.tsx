@@ -85,7 +85,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="theme-admin min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative bg */}
       <div className="absolute inset-0 bg-background noise-bg" />
       <div className="absolute top-1/4 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
