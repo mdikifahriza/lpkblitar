@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { SafeImage } from "@/components/ui/safe-image";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,8 @@ import {
   Megaphone,
   Check,
   ArrowUpRight,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 import { FilterChipRail } from "@/components/ui/filter-chip-rail";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,8 @@ const DIVISION_ICONS = {
   handshake: Handshake,
   fileSearch: FileSearch,
   megaphone: Megaphone,
+  shieldCheck: ShieldCheck,
+  users: Users,
 };
 
 const DIVISIONS = [
@@ -80,7 +84,7 @@ const DIVISIONS = [
     ],
   },
   {
-    name: "Pengaduan",
+    name: "Pengaduan Instansi",
     icon: "megaphone" as const,
     description:
       "Divisi yang menangani pelaporan ke instansi pengawas untuk memberikan tekanan administratif dan perlindungan hukum bagi klien.",
@@ -93,31 +97,16 @@ const DIVISIONS = [
 ];
 
 function getMobileDivisionLabel(label: string) {
-  if (label === "Semua") {
-    return label;
-  }
+  if (label === "Semua") return label;
 
   const normalizedLabel = label.toLowerCase();
 
-  if (normalizedLabel.includes("non-litigasi")) {
-    return "Non-Litigasi";
-  }
-
-  if (normalizedLabel.includes("litigasi")) {
-    return "Litigasi";
-  }
-
-  if (normalizedLabel.includes("dokumen")) {
-    return "Dokumen";
-  }
-
-  if (normalizedLabel.includes("instansi")) {
-    return "Instansi";
-  }
-
-  if (normalizedLabel.includes("negosiasi")) {
-    return "Negosiasi";
-  }
+  if (normalizedLabel.includes("non-litigasi")) return "Non-Litigasi";
+  if (normalizedLabel.includes("litigasi")) return "Litigasi";
+  if (normalizedLabel.includes("mediasi")) return "Mediasi";
+  if (normalizedLabel.includes("negosiasi")) return "Negosiasi";
+  if (normalizedLabel.includes("investigasi")) return "Investigasi";
+  if (normalizedLabel.includes("pengaduan")) return "Pengaduan";
 
   const shortLabel = label.split("&")[0]?.trim();
   return shortLabel || label;
@@ -139,17 +128,23 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
   const [activeFilter, setActiveFilter] = useState<string>("Semua");
 
   const divisionsList = useMemo(() => {
-    const divs = new Set(initialTeam.filter(m => !m.is_pimpinan).map(m => m.kategori_divisi || m.jabatan));
+    const divs = new Set(
+      initialTeam
+        .filter((m) => !m.is_pimpinan)
+        .map((m) => m.kategori_divisi || m.jabatan)
+    );
     return ["Semua", ...Array.from(divs)];
   }, [initialTeam]);
 
   const filteredTeam = useMemo(() => {
-    const members = initialTeam.filter(m => !m.is_pimpinan);
+    const members = initialTeam.filter((m) => !m.is_pimpinan);
     if (activeFilter === "Semua") return members;
-    return members.filter((m) => (m.kategori_divisi || m.jabatan) === activeFilter);
+    return members.filter(
+      (m) => (m.kategori_divisi || m.jabatan) === activeFilter
+    );
   }, [activeFilter, initialTeam]);
 
-  const principal = initialTeam.find(m => m.is_pimpinan) || initialTeam[0];
+  const principal = initialTeam.find((m) => m.is_pimpinan) || initialTeam[0];
 
   return (
     <>
@@ -228,7 +223,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                 </div>
 
                 <div className="prose prose-lg prose-invert prose-p:text-muted-foreground prose-p:leading-relaxed mb-10 max-w-none">
-                  {principal.bio?.split('\n').map((paragraph, index) => (
+                  {principal.bio?.split("\n").map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>
@@ -239,10 +234,12 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                     Area Keahlian Khusus
                   </h3>
                   <ul className="grid sm:grid-cols-2 gap-y-4 gap-x-6">
-                    {principal.spesialisasi.split(',').map((keahlian, idx) => (
+                    {principal.spesialisasi.split(",").map((keahlian, idx) => (
                       <li key={idx} className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground">{keahlian.trim()}</span>
+                        <span className="text-muted-foreground">
+                          {keahlian.trim()}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -290,7 +287,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-[1400px] mx-auto min-h-[500px] items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-[1400px] mx-auto min-h-[500px] items-start">
             <AnimatePresence mode="popLayout">
               {filteredTeam.map((member) => (
                 <motion.div
@@ -302,7 +299,10 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                   transition={{ duration: 0.4, type: "spring", bounce: 0.4 }}
                   className="h-full"
                 >
-                  <Link href={`/tim/${member.slug}`} className="group block h-full focus-visible:outline-none">
+                  <Link
+                    href={`/tim/${member.slug}`}
+                    className="group block h-full focus-visible:outline-none"
+                  >
                     <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-card border border-border">
                       <SafeImage
                         src={member.foto_url}
@@ -310,7 +310,7 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/40 to-transparent opacity-80 transition-opacity duration-300" />
-                      
+
                       <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
                         <div className="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 ease-out">
                           <span className="text-primary font-medium tracking-wider text-[10px] uppercase mb-2 block">
@@ -319,10 +319,12 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                           <h3 className="font-serif text-2xl text-foreground font-bold mb-3 leading-tight">
                             {member.nama}
                           </h3>
-                          
+
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 h-0 group-hover:h-auto overflow-hidden">
                             <p className="text-muted-foreground text-sm leading-relaxed border-t border-border pt-4 mt-2">
-                              <span className="block text-primary mb-1 text-xs uppercase">Spesialisasi:</span>
+                              <span className="block text-primary mb-1 text-xs uppercase">
+                                Spesialisasi:
+                              </span>
                               {member.spesialisasi}
                             </p>
                           </div>
@@ -345,9 +347,9 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
               Pembagian Tugas <span className="text-primary">Strategis</span>
             </h2>
             <p className="text-muted-foreground text-lg">
-              Kami mengkombinasikan 4 divisi utama agar setiap aspek perkara dari
-              analisa dokumen, negosiasi, pengaduan, hingga persidangan berjalan
-              optimal.
+              Kami mengkombinasikan 6 divisi utama agar setiap aspek perkara —
+              dari investigasi, negosiasi, mediasi, pengaduan, hingga persidangan
+              — berjalan optimal dan terkoordinasi.
             </p>
           </div>
 
@@ -397,9 +399,3 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
     </>
   );
 }
-
-
-
-
-
-
