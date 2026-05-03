@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { getArticles } from "@/lib/api/articles";
 import { getPublicGalleries } from "@/lib/api/galleries";
 import { getServices } from "@/lib/api/services";
+import { getTeamMembers } from "@/lib/api/team";
 import { getSiteUrl } from "@/lib/site";
 
 type SitemapService = {
@@ -18,10 +19,15 @@ type SitemapGallery = {
   updated_at?: string | null;
 };
 
+type SitemapTeamMember = {
+  slug: string;
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
 
   const services = (await getServices()) as SitemapService[];
+  const teamMembers = (await getTeamMembers()) as SitemapTeamMember[];
   const articles = (await getArticles()) as SitemapArticle[];
   const { galleries } = await getPublicGalleries();
   const galleryEntries = galleries as SitemapGallery[];
@@ -45,6 +51,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(gallery.updated_at || new Date()),
     changeFrequency: "monthly" as const,
     priority: 0.7,
+  }));
+
+  const teamDetailUrls = teamMembers.map((member) => ({
+    url: `${baseUrl}/tim/${member.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
   }));
 
   return [
@@ -91,6 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     ...serviceUrls,
+    ...teamDetailUrls,
     ...articleUrls,
     ...galleryUrls,
   ];

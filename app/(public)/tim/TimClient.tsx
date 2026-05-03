@@ -11,8 +11,10 @@ import {
   FileSearch,
   Megaphone,
   Check,
+  ArrowUpRight,
 } from "lucide-react";
 import { FilterChipRail } from "@/components/ui/filter-chip-rail";
+import { Button } from "@/components/ui/button";
 
 const DIVISION_ICONS = {
   scale: Scale,
@@ -97,13 +99,14 @@ function getMobileDivisionLabel(label: string) {
 
 interface TeamMember {
   id: string;
+  slug: string;
   nama: string;
   jabatan: string;
   spesialisasi: string;
-  bio?: string;
+  bio?: string | null;
   foto_url: string;
   is_pimpinan?: boolean;
-  kategori_divisi?: string;
+  kategori_divisi?: string | null;
 }
 
 export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
@@ -218,6 +221,13 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                     ))}
                   </ul>
                 </div>
+
+                <Button asChild className="mt-8">
+                  <Link href={`/tim/${principal.slug}`}>
+                    Lihat Profil Lengkap
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </Button>
               </div>
             </motion.div>
           </div>
@@ -264,34 +274,36 @@ export function TimClient({ initialTeam }: { initialTeam: TeamMember[] }) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.4, type: "spring", bounce: 0.4 }}
-                  className="group"
+                  className="h-full"
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-card border border-border">
-                    <SafeImage
-                      src={member.foto_url}
-                      alt={member.nama}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/40 to-transparent opacity-80 transition-opacity duration-300" />
-                    
-                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-                      <div className="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 ease-out">
-                        <span className="text-primary font-medium tracking-wider text-[10px] uppercase mb-2 block">
-                          {member.jabatan}
-                        </span>
-                        <h3 className="font-serif text-2xl text-foreground font-bold mb-3 leading-tight">
-                          {member.nama}
-                        </h3>
-                        
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 h-0 group-hover:h-auto overflow-hidden">
-                          <p className="text-muted-foreground text-sm leading-relaxed border-t border-border pt-4 mt-2">
-                            <span className="block text-primary mb-1 text-xs uppercase">Spesialisasi:</span>
-                            {member.spesialisasi}
-                          </p>
+                  <Link href={`/tim/${member.slug}`} className="group block h-full focus-visible:outline-none">
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-card border border-border">
+                      <SafeImage
+                        src={member.foto_url}
+                        alt={member.nama}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/40 to-transparent opacity-80 transition-opacity duration-300" />
+                      
+                      <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
+                        <div className="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                          <span className="text-primary font-medium tracking-wider text-[10px] uppercase mb-2 block">
+                            {member.jabatan}
+                          </span>
+                          <h3 className="font-serif text-2xl text-foreground font-bold mb-3 leading-tight">
+                            {member.nama}
+                          </h3>
+                          
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 h-0 group-hover:h-auto overflow-hidden">
+                            <p className="text-muted-foreground text-sm leading-relaxed border-t border-border pt-4 mt-2">
+                              <span className="block text-primary mb-1 text-xs uppercase">Spesialisasi:</span>
+                              {member.spesialisasi}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </AnimatePresence>
