@@ -25,45 +25,71 @@ const DIVISION_ICONS = {
 
 const DIVISIONS = [
   {
-    name: "Lawyer Litigasi",
+    name: "Litigasi",
     icon: "scale" as const,
-    description: "Divisi yang berfokus pada penanganan perkara di pengadilan, mulai dari penyusunan gugatan hingga eksekusi putusan.",
+    description:
+      "Divisi yang berfokus pada penanganan perkara di pengadilan, mulai dari penyusunan gugatan hingga eksekusi putusan.",
     responsibilities: [
       "Menyusun gugatan dan jawaban di pengadilan negeri.",
       "Mendampingi klien pada seluruh tahap persidangan.",
-      "Menangani upaya hukum banding, kasasi, dan peninjauan kembali."
-    ]
+      "Menangani upaya hukum banding, kasasi, dan peninjauan kembali.",
+    ],
   },
   {
-    name: "Non-Litigasi & Negosiasi",
+    name: "Non-Litigasi",
+    icon: "shieldCheck" as const,
+    description:
+      "Divisi yang menangani permasalahan hukum melalui mekanisme di luar jalur pengadilan dengan pendekatan preventif, konsultatif, dan solutif.",
+    responsibilities: [
+      "Konsultasi hukum, drafting, dan review kontrak atau perjanjian.",
+      "Pemberian legal opinion dan analisis yuridis komprehensif.",
+      "Pendampingan restrukturisasi kewajiban dan penyelesaian sengketa musyawarah.",
+    ],
+  },
+  {
+    name: "Mediasi",
+    icon: "users" as const,
+    description:
+      "Divisi yang menjadi jembatan penyelesaian antara masyarakat dengan pihak bank, leasing, finance, koperasi, dan developer melalui pendekatan mediasi.",
+    responsibilities: [
+      "Somasi, mediasi, dan permohonan restrukturisasi kredit.",
+      "Investigasi fakta lapangan dan verifikasi legalitas dokumen.",
+      "Pembentukan forum musyawarah penyelesaian sengketa.",
+    ],
+  },
+  {
+    name: "Negosiasi",
     icon: "handshake" as const,
-    description: "Divisi yang menangani penyelesaian sengketa di luar pengadilan melalui negosiasi, mediasi, dan restrukturisasi.",
+    description:
+      "Divisi yang menyelesaikan sengketa melalui jalur negosiasi langsung antara para pihak guna mencapai kesepakatan yang adil, cepat, dan mengikat secara hukum.",
     responsibilities: [
-      "Menyusun strategi penyelesaian damai dan mediasi.",
-      "Memimpin negosiasi dengan pihak lawan atau kreditur.",
-      "Merumuskan akta perdamaian yang mengikat secara hukum."
-    ]
+      "Negosiasi finance dan perdamaian antara kreditur dan debitur.",
+      "Penyelesaian komplain konsumen dan penyusunan legal notice.",
+      "Penyusunan akta perdamaian atau kesepakatan tertulis yang sah.",
+    ],
   },
   {
-    name: "Analisa Dokumen",
+    name: "Investigasi",
     icon: "fileSearch" as const,
-    description: "Divisi khusus yang menelaah dokumen legal secara mendalam guna menemukan celah hukum untuk strategi pembelaan.",
+    description:
+      "Divisi khusus yang menelaah fakta, mengumpulkan bukti, serta menganalisis mendalam permasalahan hukum guna memperoleh informasi yang akurat dan dapat dipertanggungjawabkan.",
     responsibilities: [
-      "Mengaudit perjanjian kredit, akta jaminan, dan sertifikat.",
-      "Menganalisa prosedur lelang, cessie, dan eksekusi sepihak.",
-      "Memberikan rekomendasi tertulis tentang posisi hukum klien."
-    ]
+      "Investigasi lapangan, wawancara, dan pengumpulan dokumen bukti.",
+      "Penelusuran aset dan due diligence investigatif.",
+      "Penyusunan laporan investigasi komprehensif untuk kebutuhan litigasi maupun non-litigasi.",
+    ],
   },
   {
-    name: "Pengaduan Instansi",
+    name: "Pengaduan",
     icon: "megaphone" as const,
-    description: "Divisi yang menangani pelaporan ke instansi pengawas untuk memberikan tekanan administratif dan mitigasi.",
+    description:
+      "Divisi yang menangani pelaporan ke instansi pengawas untuk memberikan tekanan administratif dan perlindungan hukum bagi klien.",
     responsibilities: [
-      "Menyusun laporan ke Otoritas Jasa Keuangan (OJK).",
-      "Mendampingi pelaporan ke Kepolisian atas dugaan pidana.",
-      "Melaporkan pelanggaran perlindungan konsumen ke BPSK."
-    ]
-  }
+      "Menyusun laporan ke OJK, BPSK, Dinas Koperasi, Satgas Waspada Investasi, dan Disperindag.",
+      "Mendampingi pelaporan ke Kepolisian atas dugaan unsur pidana.",
+      "Mengajukan pengaduan ke instansi perlindungan konsumen.",
+    ],
+  },
 ];
 
 function getMobileDivisionLabel(label: string) {
