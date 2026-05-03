@@ -273,10 +273,11 @@ export function LayananDetailClient({
                     </a>
 
                     <Button
+                      asChild
                       variant="outline"
                       className="w-full py-6 text-base border-primary/50 text-foreground hover:bg-primary/10"
                     >
-                      Isi Form Konsultasi
+                      <Link href="/konsultasi">Isi Form Konsultasi</Link>
                     </Button>
                   </div>
                 </div>

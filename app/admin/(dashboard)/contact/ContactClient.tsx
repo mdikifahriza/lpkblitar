@@ -107,7 +107,9 @@ function ContactField({
       </Label>
       <div
         className={`rounded-xl border border-border/70 bg-background px-4 py-3 text-sm text-foreground shadow-sm ${
-          multiline ? "min-h-[96px] whitespace-pre-wrap leading-relaxed" : "min-h-11 flex items-center"
+          multiline
+            ? "min-h-[96px] whitespace-pre-wrap leading-relaxed [overflow-wrap:anywhere]"
+            : "min-h-11 flex items-center"
         }`}
       >
         {value?.trim() || "-"}
@@ -408,18 +410,22 @@ export function ContactClient({
             </div>
 
             {initialContact.maps_embed_url ? (
-              <div className="overflow-hidden rounded-xl border border-border bg-background">
-                <iframe
-                  src={initialContact.maps_embed_url}
-                  title="Lokasi kantor"
-                  className="h-[320px] w-full"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+              <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-xl border border-border bg-background">
+                <div className="relative aspect-square w-full">
+                  <iframe
+                    src={initialContact.maps_embed_url}
+                    title="Lokasi kantor"
+                    className="absolute inset-0 h-full w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-border bg-background px-4 py-16 text-center text-sm text-muted-foreground">
-                URL embed maps belum diisi
+              <div className="mx-auto w-full max-w-[420px]">
+                <div className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-background px-4 text-center text-sm text-muted-foreground">
+                  URL embed maps belum diisi
+                </div>
               </div>
             )}
 
@@ -735,18 +741,22 @@ export function ContactClient({
                   </div>
 
                   {editingMapsEmbedUrl ? (
-                    <div className="overflow-hidden rounded-xl border border-border bg-card">
-                      <iframe
-                        src={editingMapsEmbedUrl}
-                        title="Preview lokasi kantor"
-                        className="h-[280px] w-full"
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                      />
+                    <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-xl border border-border bg-card">
+                      <div className="relative aspect-square w-full">
+                        <iframe
+                          src={editingMapsEmbedUrl}
+                          title="Preview lokasi kantor"
+                          className="absolute inset-0 h-full w-full"
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                        />
+                      </div>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
-                      URL embed maps belum tersedia
+                    <div className="mx-auto w-full max-w-[360px]">
+                      <div className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-card px-4 text-center text-sm text-muted-foreground">
+                        URL embed maps belum tersedia
+                      </div>
                     </div>
                   )}
 

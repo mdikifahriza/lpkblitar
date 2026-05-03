@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { buildGoogleMapsEmbedUrl } from "@/lib/google-maps";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const ALLOWED_CONTACT_EDITOR_ROLES = new Set(["admin", "superadmin"]);
+type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
 
 const contactSettingsSchema = z.object({
   whatsapp_number: z.string().trim().min(1, "Nomor WhatsApp wajib diisi."),
@@ -30,6 +34,34 @@ function revalidateContactPages() {
   revalidatePath("/admin/contact");
 }
 
+async function getAuthorizedAdminClient() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("Anda harus login untuk mengubah data kontak.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!profile?.role || !ALLOWED_CONTACT_EDITOR_ROLES.has(profile.role)) {
+    throw new Error("Anda tidak memiliki izin untuk mengubah data kontak.");
+  }
+
+  return createAdminClient();
+}
+
 function isMissingRelationError(error: { code?: string; message?: string } | null) {
   if (!error) {
     return false;
@@ -39,9 +71,10 @@ function isMissingRelationError(error: { code?: string; message?: string } | nul
 }
 
 async function upsertLegacySiteSettings(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseAdminClient,
   values: z.infer<typeof contactSettingsSchema>
 ) {
+  const updatedAt = new Date().toISOString();
   const generatedMapsEmbedUrl = values.maps_link_url
     ? await buildGoogleMapsEmbedUrl(values.maps_link_url)
     : values.maps_embed_url ?? "";
@@ -59,6 +92,7 @@ async function upsertLegacySiteSettings(
     value,
     tipe: "text",
     label,
+    updated_at: updatedAt,
   }));
 
   const { error } = await supabase.from("site_settings").upsert(rows, {
@@ -70,7 +104,7 @@ async function upsertLegacySiteSettings(
   }
 }
 
-async function ensureMainContactId(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function ensureMainContactId(supabase: SupabaseAdminClient) {
   const { data: existing, error } = await supabase
     .from("contact_settings")
     .select("id")
@@ -101,26 +135,10 @@ async function ensureMainContactId(supabase: Awaited<ReturnType<typeof createCli
 export async function upsertContactSettings(payload: unknown) {
   try {
     const values = contactSettingsSchema.parse(payload);
-    const supabase = await createClient();
+    const supabase = await getAuthorizedAdminClient();
     const generatedMapsEmbedUrl = values.maps_link_url
       ? await buildGoogleMapsEmbedUrl(values.maps_link_url)
       : values.maps_embed_url ?? "";
-
-    const { data: existing, error: existingError } = await supabase
-      .from("contact_settings")
-      .select("id")
-      .eq("singleton_key", "main")
-      .maybeSingle();
-
-    if (isMissingRelationError(existingError)) {
-      await upsertLegacySiteSettings(supabase, values);
-      revalidateContactPages();
-      return { success: true };
-    }
-
-    if (existingError) {
-      throw existingError;
-    }
 
     const contactPayload = {
       singleton_key: "main",
@@ -131,23 +149,27 @@ export async function upsertContactSettings(payload: unknown) {
       jam_operasional: values.jam_operasional ?? "",
       maps_embed_url: generatedMapsEmbedUrl,
       maps_link_url: values.maps_link_url ?? "",
+      updated_at: new Date().toISOString(),
     };
 
-    if (existing?.id) {
-      const { error } = await supabase
-        .from("contact_settings")
-        .update(contactPayload)
-        .eq("id", existing.id);
+    const { data: persistedContact, error: upsertError } = await supabase
+      .from("contact_settings")
+      .upsert(contactPayload, { onConflict: "singleton_key" })
+      .select("id")
+      .maybeSingle();
 
-      if (error) {
-        throw error;
-      }
-    } else {
-      const { error } = await supabase.from("contact_settings").insert([contactPayload]);
+    if (isMissingRelationError(upsertError)) {
+      await upsertLegacySiteSettings(supabase, values);
+      revalidateContactPages();
+      return { success: true };
+    }
 
-      if (error) {
-        throw error;
-      }
+    if (upsertError) {
+      throw upsertError;
+    }
+
+    if (!persistedContact?.id) {
+      throw new Error("Data kontak gagal tersimpan ke database.");
     }
 
     revalidateContactPages();
@@ -168,7 +190,7 @@ export async function upsertContactSettings(payload: unknown) {
 export async function upsertContactSocialLink(payload: unknown) {
   try {
     const values = socialLinkSchema.parse(payload);
-    const supabase = await createClient();
+    const supabase = await getAuthorizedAdminClient();
     const contactSettingsId = await ensureMainContactId(supabase);
 
     const socialPayload = {
@@ -223,7 +245,7 @@ export async function upsertContactSocialLink(payload: unknown) {
 
 export async function deleteContactSocialLink(id: string) {
   try {
-    const supabase = await createClient();
+    const supabase = await getAuthorizedAdminClient();
     const { error } = await supabase.from("contact_social_links").delete().eq("id", id);
 
     if (error) {
@@ -242,7 +264,7 @@ export async function deleteContactSocialLink(id: string) {
 
 export async function toggleContactSocialLinkStatus(id: string, aktif: boolean) {
   try {
-    const supabase = await createClient();
+    const supabase = await getAuthorizedAdminClient();
     const { error } = await supabase
       .from("contact_social_links")
       .update({ aktif })

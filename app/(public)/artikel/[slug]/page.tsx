@@ -12,38 +12,87 @@ const getAuthorFallback = () => ({
   bio: "Praktisi hukum, konsultan finance dan perbankan, negosiator penyelesaian sengketa bisnis, serta konsultan perlindungan konsumen.",
 });
 
+type ArticleLike = {
+  id?: string;
+  slug?: string;
+  judul?: string;
+  kategori?: string;
+  category?: string;
+  konten?: string | null;
+  content?: Array<{ type: string; text?: string; items?: string[] }>;
+  thumbnail_url?: string | null;
+  image?: string | null;
+  published_at?: string | null;
+  date?: string | null;
+  estimasi_baca?: number | null;
+  readTime?: string | number | null;
+};
+
+function normalizeArticleContent(article: ArticleLike) {
+  if (Array.isArray(article.content) && article.content.length > 0) {
+    return article.content;
+  }
+
+  if (typeof article.konten === "string") {
+    return article.konten
+      .split("\n\n")
+      .map((paragraph) => ({
+        type: "p",
+        text: paragraph.trim(),
+      }))
+      .filter((block) => (block.text || "").length > 0);
+  }
+
+  return [];
+}
+
+function normalizeArticleForDetail(article: ArticleLike) {
+  return {
+    ...article,
+    category: article.kategori || article.category || "Panduan Hukum",
+    date: article.published_at || article.date || new Date().toISOString(),
+    readTime:
+      typeof article.estimasi_baca === "number"
+        ? article.estimasi_baca
+        : article.readTime || 5,
+    image: article.thumbnail_url || article.image || "/fallback-gambar.jpeg",
+    content: normalizeArticleContent(article),
+  };
+}
+
 export const generateMetadata = artMetadata;
 
 export default async function ArtikelDetailPage({ params }: { params: { slug: string } }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const rawArticle = await getArticleBySlug(slug);
 
-  if (!article) {
+  if (!rawArticle) {
     return <NotFound />;
   }
 
-  if (typeof article.konten === "string") {
-    article.content = article.konten
-      .split("\n\n")
-      .map((paragraph: string) => ({
-        type: "p",
-        text: paragraph.trim(),
-      }))
-      .filter((block: any) => block.text.length > 0);
-  } else {
-    article.content = [];
-  }
+  const article = normalizeArticleForDetail(rawArticle);
 
   const [{ contact }, allArticles] = await Promise.all([getContactData(), getArticles()]);
 
-  const relatedArticles = allArticles
-    .filter((item) => item.id !== article.id && item.kategori === article.kategori)
-    .slice(0, 3);
+  const primaryPool = allArticles.filter(
+    (item) => item.slug !== article.slug && item.kategori === rawArticle.kategori
+  );
+  const fallbackPool = allArticles.filter((item) => item.slug !== article.slug);
+  const seenSlugs = new Set<string>();
 
-  if (relatedArticles.length < 3) {
-    const fallback = allArticles.filter((item) => item.id !== article.id).slice(0, 3);
-    relatedArticles.push(...fallback.slice(0, 3 - relatedArticles.length));
-  }
+  const relatedArticles = [...primaryPool, ...fallbackPool]
+    .filter((item) => {
+      const itemSlug = (item.slug || "").trim();
+
+      if (!itemSlug || seenSlugs.has(itemSlug)) {
+        return false;
+      }
+
+      seenSlugs.add(itemSlug);
+      return true;
+    })
+    .slice(0, 3)
+    .map((item) => normalizeArticleForDetail(item));
 
   return (
     <ArtikelDetailClient

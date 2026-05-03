@@ -51,16 +51,17 @@ export function CTAFinalClient({ settings, contact }: CTAFinalClientProps) {
                 {settings.hero_cta_primary || "Hubungi via WhatsApp"}
               </Button>
             </a>
-            <Link href="/konsultasi" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto border-primary/35 text-secondary-foreground hover:bg-primary/10 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none bg-transparent"
-              >
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto border-primary/35 text-secondary-foreground hover:bg-primary/10 px-8 py-6 text-base uppercase tracking-wider font-medium gap-3 rounded-none bg-transparent"
+            >
+              <Link href="/konsultasi">
                 <FileText className="w-5 h-5" />
                 Isi Form Konsultasi
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </motion.div>
       </div>

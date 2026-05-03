@@ -64,12 +64,12 @@ export function KontakClient({
                 </Button>
               </a>
 
-              <Link href="/konsultasi" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full gap-3 px-7 py-6 text-base font-semibold">
+              <Button asChild size="lg" variant="outline" className="w-full gap-3 px-7 py-6 text-base font-semibold">
+                <Link href="/konsultasi">
                   <FileText className="h-5 w-5" />
                   Isi Form Konsultasi
-                </Button>
-              </Link>
+                </Link>
+              </Button>
 
               {phoneHref ? (
                 <a href={phoneHref} className="w-full sm:w-auto">

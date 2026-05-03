@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SafeImage } from "@/components/ui/safe-image";
+import { slugifyArticleTitle } from "@/lib/article";
 import { deleteArticle, deleteAllArticles, toggleArticleStatus, upsertArticle } from "./actions";
 
 type ArticleItem = {
@@ -69,6 +70,7 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<ArticleForm>({
@@ -122,6 +124,7 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
       estimasi_baca: 5,
       published: true,
     });
+    setIsSlugEditedManually(false);
     resetThumbnailState();
     setIsDialogOpen(true);
   };
@@ -138,9 +141,35 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
       published: article.published,
       published_at: article.published_at || null,
     });
+    setIsSlugEditedManually(true);
     resetThumbnailState();
     setThumbnailPreview(article.thumbnail_url || null);
     setIsDialogOpen(true);
+  };
+
+  const handleTitleChange = (value: string) => {
+    setFormData((current) => ({
+      ...current,
+      judul: value,
+      slug: isSlugEditedManually ? current.slug : slugifyArticleTitle(value),
+    }));
+  };
+
+  const handleSlugChange = (value: string) => {
+    if (!value.trim()) {
+      setIsSlugEditedManually(false);
+      setFormData((current) => ({
+        ...current,
+        slug: slugifyArticleTitle(current.judul),
+      }));
+      return;
+    }
+
+    setIsSlugEditedManually(true);
+    setFormData((current) => ({
+      ...current,
+      slug: slugifyArticleTitle(value),
+    }));
   };
 
   const handleDeleteConfirm = (id: string) => {
@@ -500,23 +529,26 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-border bg-card text-foreground">
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] w-[min(96vw,56rem)] overflow-y-auto border-border bg-card text-foreground">
+          <DialogHeader className="space-y-2 border-b border-border pb-4 pr-10">
             <DialogTitle className="font-serif text-2xl text-primary">
               {formData.id ? "Edit Artikel" : "Tulis Artikel Baru"}
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Lengkapi data utama artikel, lalu simpan untuk menerbitkan atau menyimpannya sebagai draft.
+            </p>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="flex items-start gap-6 border-b border-border pb-6">
-              <div className="w-1/3 space-y-3">
+          <div className="space-y-6 py-2">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+              <div className="space-y-3">
                 <Label className="text-muted-foreground">Thumbnail (Gambar Cover)</Label>
-                <div className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+                <div className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-background">
                   {thumbnailPreview ? (
                     <SafeImage src={thumbnailPreview} alt="Preview" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center px-4 text-center">
                       <ImageIcon className="mb-2 h-8 w-8 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Upload 16:9 Image</span>
+                      <span className="text-xs text-muted-foreground">Upload gambar rasio 16:9</span>
                     </div>
                   )}
                   <label
@@ -541,37 +573,43 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
                     disabled={isUploading || isLoading}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">Maksimal 2MB. JPG, PNG, atau WEBP.</p>
               </div>
-              <div className="w-2/3 space-y-4">
-                <div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
                   <Label className="text-muted-foreground">Judul Artikel *</Label>
                   <Input
-                    className="mt-1 bg-background text-foreground focus-visible:ring-primary"
+                    className="bg-background text-foreground focus-visible:ring-primary"
+                    placeholder="Contoh: Hak Konsumen saat Penarikan Kendaraan"
                     value={formData.judul}
-                    onChange={(event) => setFormData({ ...formData, judul: event.target.value })}
+                    onChange={(event) => handleTitleChange(event.target.value)}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
                     <Label className="text-muted-foreground">Slug URL</Label>
                     <Input
-                      className="mt-1 bg-background text-foreground focus-visible:ring-primary"
+                      className="bg-background font-mono text-sm text-foreground focus-visible:ring-primary"
                       placeholder="otomatis-dari-judul"
                       value={formData.slug}
-                      onChange={(event) => setFormData({ ...formData, slug: event.target.value })}
+                      onChange={(event) => handleSlugChange(event.target.value)}
                     />
+                    <p className="text-xs text-muted-foreground">Otomatis dari judul, tetap bisa diedit manual.</p>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label className="text-muted-foreground">Estimasi Baca (menit)</Label>
                     <Input
                       type="number"
-                      className="mt-1 bg-background text-foreground focus-visible:ring-primary"
+                      min={1}
+                      className="bg-background text-foreground focus-visible:ring-primary"
                       value={formData.estimasi_baca}
                       onChange={(event) =>
-                        setFormData({
-                          ...formData,
-                          estimasi_baca: parseInt(event.target.value, 10) || 5,
-                        })
+                        setFormData((current) => ({
+                          ...current,
+                          estimasi_baca: Math.max(1, parseInt(event.target.value, 10) || 1),
+                        }))
                       }
                     />
                   </div>
@@ -579,9 +617,9 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
               </div>
             </div>
 
-            <div className="grid grid-cols-2 items-center gap-4">
-              <div>
-                <Label className="mb-1 block text-muted-foreground">Kategori</Label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Kategori</Label>
                 <Select
                   value={formData.kategori}
                   onValueChange={(value) => setFormData({ ...formData, kategori: value })}
@@ -608,31 +646,37 @@ export function ArticlesClient({ initialArticles, userRole }: { initialArticles:
                   </SelectContent>
                 </Select>
               </div>
-              <div className="ml-4 flex flex-col items-start gap-1">
+
+              <div className="space-y-2 rounded-xl border border-border bg-background px-4 py-3">
                 <Label className="text-muted-foreground">Visibilitas</Label>
-                <div className="mt-1 flex items-center space-x-2">
-                  <Switch
-                    checked={formData.published}
-                    onCheckedChange={(value) => setFormData({ ...formData, published: value })}
-                    className="data-[state=checked]:bg-primary"
-                  />
-                  <span className="font-medium text-foreground">
-                    {formData.published ? "Publik" : "Draft Tersimpan"}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">
+                    {formData.published ? "Artikel tampil ke publik" : "Artikel tersimpan sebagai draft"}
                   </span>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.published}
+                      onCheckedChange={(value) => setFormData({ ...formData, published: value })}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                    <span className="text-sm font-semibold text-foreground">
+                      {formData.published ? "Publik" : "Draft"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <Label className="mb-2 block text-muted-foreground">Konten / Isi Artikel</Label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Konten / Isi Artikel</Label>
               <Textarea
                 className="min-h-[300px] resize-y bg-background leading-relaxed text-foreground focus-visible:ring-primary"
                 placeholder="Gunakan pemisahan baris (Enter dua kali) untuk memisahkan paragraf."
                 value={formData.konten}
                 onChange={(event) => setFormData({ ...formData, konten: event.target.value })}
               />
-              <p className="mt-2 text-xs text-muted-foreground">
-                Tip: Artikel ini dibaca secara otomatis menggunakan pemisah baris untuk membuat paragraf.
+              <p className="text-xs text-muted-foreground">
+                Tip: Gunakan Enter dua kali untuk memisahkan paragraf agar artikel lebih mudah dibaca.
               </p>
             </div>
           </div>

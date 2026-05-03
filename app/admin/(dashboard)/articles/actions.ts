@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { slugifyArticleTitle } from "@/lib/article";
 import { getStorageBucketName, getStoragePathFromUrl } from "@/lib/storage";
 
 type ArticlePayload = {
@@ -16,17 +17,31 @@ type ArticlePayload = {
 export async function upsertArticle(data: ArticlePayload) {
   try {
     const supabase = await createClient();
-    const { previous_thumbnail_url, ...payload } = data;
+    const { previous_thumbnail_url, id, ...payload } = data;
 
-    if (!payload.slug && payload.judul) {
-      payload.slug = payload.judul.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+    const normalizedTitle = typeof payload.judul === "string" ? payload.judul : "";
+    const normalizedSlugSource =
+      typeof payload.slug === "string" && payload.slug.trim()
+        ? payload.slug
+        : normalizedTitle;
+    const normalizedSlug = slugifyArticleTitle(normalizedSlugSource);
+
+    if (!normalizedSlug) {
+      return { error: "Judul artikel wajib diisi agar slug dapat dibuat." };
     }
 
-    if (payload.id) {
-      const { error } = await supabase.from("articles").update(payload).eq("id", payload.id);
+    payload.slug = normalizedSlug;
+
+    if (id) {
+      const { error } = await supabase.from("articles").update(payload).eq("id", id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from("articles").insert([payload]);
+      const insertPayload = {
+        id: crypto.randomUUID(),
+        ...payload,
+      };
+
+      const { error } = await supabase.from("articles").insert([insertPayload]);
       if (error) throw error;
     }
 
